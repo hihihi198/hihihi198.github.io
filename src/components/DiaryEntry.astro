@@ -1,0 +1,42 @@
+---
+import { render } from 'astro:content';
+import type { CollectionEntry } from 'astro:content';
+
+type Props = { entry: CollectionEntry<'diary'> };
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+const date = entry.data.date;
+---
+<article class="entry">
+  <time datetime={date.toISOString()}>
+    {date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+  </time>
+  <div class="body">
+    <Content />
+  </div>
+</article>
+
+<style>
+  .entry {
+    padding: 1.25rem 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .entry:last-child {
+    border-bottom: none;
+  }
+  time {
+    display: block;
+    margin-bottom: 0.35rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .body :global(p) {
+    margin: 0;
+  }
+  .body :global(p + p) {
+    margin-top: 0.75rem;
+  }
+</style>

@@ -1,0 +1,27 @@
+---
+import { getCollection } from 'astro:content';
+import Layout from '../../layouts/Layout.astro';
+import DiaryEntry from '../../components/DiaryEntry.astro';
+
+// Newest first.
+const entries = (await getCollection('diary')).sort(
+  (a, b) => b.data.date.valueOf() - a.data.date.valueOf()
+);
+---
+<Layout title="Diary">
+  <main>
+    <h1>Diary</h1>
+    <p class="lede">Short notes, most recent first.</p>
+    <section class="feed">
+      {entries.map((entry) => <DiaryEntry entry={entry} />)}
+    </section>
+  </main>
+</Layout>
+
+<style>
+  .lede {
+    margin: 0 0 1.25rem;
+    color: var(--muted);
+    font-size: 0.95rem;
+  }
+</style>
