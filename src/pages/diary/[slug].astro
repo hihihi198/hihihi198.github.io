@@ -1,0 +1,61 @@
+---
+import { getCollection, render } from 'astro:content';
+import Layout from '../../layouts/Layout.astro';
+import { diarySlug } from '../../lib/diary';
+import type { CollectionEntry } from 'astro:content';
+
+export async function getStaticPaths() {
+  const entries = await getCollection('diary');
+  return entries.map((entry) => ({
+    params: { slug: diarySlug(entry) },
+    props: { entry },
+  }));
+}
+
+type Props = { entry: CollectionEntry<'diary'> };
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+const date = entry.data.date;
+const dateLabel = date.toLocaleDateString('en-US', {
+  month: 'long',
+  day: 'numeric',
+  year: 'numeric',
+});
+---
+<Layout title={`Diary · ${dateLabel}`}>
+  <main class="detail">
+    <a class="back" href="/diary/">← All entries</a>
+    <article>
+      <time datetime={date.toISOString()}>{dateLabel}</time>
+      <div class="body"><Content /></div>
+    </article>
+  </main>
+</Layout>
+
+<style>
+  .back {
+    display: inline-block;
+    margin-bottom: 1.5rem;
+    font-size: 0.9rem;
+    color: var(--muted);
+    text-decoration: none;
+  }
+  .back:hover {
+    color: var(--accent);
+  }
+  time {
+    display: block;
+    margin-bottom: 0.75rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .body :global(p) {
+    margin: 0;
+  }
+  .body :global(p + p) {
+    margin-top: 0.85rem;
+  }
+</style>

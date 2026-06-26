@@ -2,26 +2,74 @@
 import { getCollection } from 'astro:content';
 import Layout from '../../layouts/Layout.astro';
 import DiaryEntry from '../../components/DiaryEntry.astro';
+import type { CollectionEntry } from 'astro:content';
 
-// Newest first.
+type Group = { key: string; label: string; entries: CollectionEntry<'diary'>[] };
+
 const entries = (await getCollection('diary')).sort(
   (a, b) => b.data.date.valueOf() - a.data.date.valueOf()
 );
+
+// Group entries by calendar month, newest first.
+const groups: Group[] = [];
+for (const entry of entries) {
+  const d = entry.data.date;
+  const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  const label = d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  let group = groups.find((g) => g.key === key);
+  if (!group) {
+    group = { key, label, entries: [] };
+    groups.push(group);
+  }
+  group.entries.push(entry);
+}
 ---
 <Layout title="Diary">
   <main>
-    <h1>Diary</h1>
     <p class="lede">Short notes, most recent first.</p>
-    <section class="feed">
-      {entries.map((entry) => <DiaryEntry entry={entry} />)}
-    </section>
+    <div class="timeline">
+      {groups.map((group) => (
+        <section class="month">
+          <h2 class="month-label">{group.label}</h2>
+          {group.entries.map((entry) => <DiaryEntry entry={entry} />)}
+        </section>
+      ))}
+    </div>
   </main>
 </Layout>
 
 <style>
   .lede {
-    margin: 0 0 1.25rem;
+    margin: 0 0 1.75rem;
     color: var(--muted);
     font-size: 0.95rem;
+  }
+  .timeline {
+    position: relative;
+  }
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 7px;
+    top: 6px;
+    bottom: 4px;
+    width: 2px;
+    background: var(--spine);
+  }
+  .month {
+    margin-bottom: 2rem;
+  }
+  .month:last-child {
+    margin-bottom: 0;
+  }
+  .month-label {
+    position: relative;
+    margin: 0 0 1.1rem;
+    padding-left: 28px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--muted);
   }
 </style>

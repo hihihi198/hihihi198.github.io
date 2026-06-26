@@ -11,18 +11,53 @@ const { title } = Astro.props;
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>{title}</title>
+    <script is:inline>
+      // Apply theme before paint to avoid a flash of the wrong colors.
+      const saved = localStorage.getItem('theme');
+      const system = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      document.documentElement.dataset.theme = saved ?? (system ? 'dark' : 'light');
+    </script>
   </head>
   <body>
+    <header class="site-header">
+      <a class="brand" href="/diary/">Diary</a>
+      <button id="theme-toggle" type="button" aria-label="Toggle dark mode" title="Toggle dark mode">
+        <span class="moon">☾</span>
+        <span class="sun">☀</span>
+      </button>
+    </header>
     <slot />
+    <script>
+      const btn = document.getElementById('theme-toggle');
+      btn?.addEventListener('click', () => {
+        const root = document.documentElement;
+        const next = root.dataset.theme === 'dark' ? 'light' : 'dark';
+        root.dataset.theme = next;
+        localStorage.setItem('theme', next);
+      });
+    </script>
   </body>
 </html>
 
 <style is:global>
   :root {
-    --max-width: 640px;
+    --bg: #ffffff;
     --text: #1f2328;
     --muted: #6b7280;
     --line: #e5e7eb;
+    --spine: #d7dbe0;
+    --node: #b4bac3;
+    --accent: #4f46e5;
+    --max-width: 640px;
+  }
+  :root[data-theme='dark'] {
+    --bg: #11141a;
+    --text: #e7e9ec;
+    --muted: #9aa1ad;
+    --line: #262b33;
+    --spine: #2c323b;
+    --node: #4a515c;
+    --accent: #9b9df8;
   }
   * {
     box-sizing: border-box;
@@ -32,21 +67,65 @@ const { title } = Astro.props;
   }
   body {
     margin: 0;
-    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
     color: var(--text);
-    line-height: 1.6;
-    background: #fff;
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.65;
+    transition: background 0.2s ease, color 0.2s ease;
   }
   main {
     max-width: var(--max-width);
     margin: 0 auto;
-    padding: 2.5rem 1.25rem 4rem;
-  }
-  h1 {
-    margin: 0 0 0.25rem;
-    font-size: 1.5rem;
+    padding: 1.5rem 1.25rem 4rem;
   }
   a {
     color: inherit;
+  }
+
+  /* Header + theme toggle */
+  .site-header {
+    max-width: var(--max-width);
+    margin: 0 auto;
+    padding: 1.5rem 1.25rem 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .brand {
+    font-size: 0.95rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-decoration: none;
+    color: var(--text);
+  }
+  #theme-toggle {
+    width: 32px;
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    font-size: 0.95rem;
+    line-height: 1;
+    color: var(--text);
+    background: none;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    cursor: pointer;
+    transition: border-color 0.2s ease, color 0.2s ease;
+  }
+  #theme-toggle:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  /* Moon in light mode, sun in dark mode. */
+  #theme-toggle .sun {
+    display: none;
+  }
+  [data-theme='dark'] #theme-toggle .sun {
+    display: inline;
+  }
+  [data-theme='dark'] #theme-toggle .moon {
+    display: none;
   }
 </style>
