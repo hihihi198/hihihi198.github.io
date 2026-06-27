@@ -1,0 +1,8 @@
+name = "diary"
+main = "src/index.ts"
+compatibility_date = "2025-06-01"
+
+# Created with: wrangler kv namespace create DIARY
+[[kv_namespaces]]
+binding = "DIARY"
+id = "c27ce0fd03834d9f91e643cbb83378bd"

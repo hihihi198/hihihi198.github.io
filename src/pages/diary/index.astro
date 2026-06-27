@@ -1,41 +1,108 @@
 ---
-import { getCollection } from 'astro:content';
 import Layout from '../../layouts/Layout.astro';
-import DiaryEntry from '../../components/DiaryEntry.astro';
-import type { CollectionEntry } from 'astro:content';
 
-type Group = { key: string; label: string; entries: CollectionEntry<'diary'>[] };
-
-const entries = (await getCollection('diary')).sort(
-  (a, b) => b.data.date.valueOf() - a.data.date.valueOf()
-);
-
-// Group entries by calendar month, newest first.
-const groups: Group[] = [];
-for (const entry of entries) {
-  const d = entry.data.date;
-  const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-  const label = d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-  let group = groups.find((g) => g.key === key);
-  if (!group) {
-    group = { key, label, entries: [] };
-    groups.push(group);
-  }
-  group.entries.push(entry);
-}
+// Worker origin. Filled with the real workers.dev URL after deploy.
+const API_BASE = 'https://diary.hihihi198.workers.dev';
 ---
 <Layout title="Diary">
   <main>
     <p class="lede">Short notes, most recent first.</p>
-    <div class="timeline">
-      {groups.map((group) => (
-        <section class="month">
-          <h2 class="month-label">{group.label}</h2>
-          {group.entries.map((entry) => <DiaryEntry entry={entry} />)}
-        </section>
-      ))}
+    <div id="diary-app" data-api={API_BASE}>
+      <p class="loading">Loading…</p>
     </div>
   </main>
+  <script>
+    const app = document.getElementById('diary-app');
+    const API = app?.dataset.api;
+
+    function parseDate(s: string) {
+      return new Date(s);
+    }
+    function monthLabel(d: Date) {
+      return d.toLocaleDateString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+    }
+    function fmtDate(d: Date) {
+      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+    }
+
+    type Entry = { id: string; date: string; bodyHtml: string; tags: string[] };
+
+    function entryEl(e: Entry) {
+      const d = parseDate(e.date);
+      const art = document.createElement('article');
+      art.className = 'entry';
+      art.id = 'entry-' + e.id;
+      const node = document.createElement('span');
+      node.className = 'node';
+      node.setAttribute('aria-hidden', 'true');
+      const a = document.createElement('a');
+      a.className = 'entry-link';
+      a.href = '#' + e.id;
+      const time = document.createElement('time');
+      time.dateTime = e.date;
+      time.textContent = fmtDate(d);
+      const body = document.createElement('div');
+      body.className = 'body';
+      body.innerHTML = e.bodyHtml;
+      a.append(time, body);
+      art.append(node, a);
+      return art;
+    }
+
+    function render(entries: Entry[]) {
+      if (!app) return;
+      if (!entries.length) {
+        app.innerHTML = '<p class="empty">No entries yet.</p>';
+        return;
+      }
+      const groups: { key: string; label: string; entries: Entry[] }[] = [];
+      for (const e of entries) {
+        const d = parseDate(e.date);
+        const key = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
+        let g = groups.find((x) => x.key === key);
+        if (!g) {
+          g = { key, label: monthLabel(d), entries: [] };
+          groups.push(g);
+        }
+        g.entries.push(e);
+      }
+      const tl = document.createElement('div');
+      tl.className = 'timeline';
+      for (const g of groups) {
+        const sec = document.createElement('section');
+        sec.className = 'month';
+        const h = document.createElement('h2');
+        h.className = 'month-label';
+        h.textContent = g.label;
+        sec.append(h);
+        for (const e of g.entries) sec.append(entryEl(e));
+        tl.append(sec);
+      }
+      app.innerHTML = '';
+      app.append(tl);
+      scrollToHash();
+    }
+
+    function scrollToHash() {
+      if (!location.hash) return;
+      const t = document.getElementById('entry-' + location.hash.slice(1));
+      if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    async function load() {
+      if (!app || !API) return;
+      try {
+        const res = await fetch(`${API}/api/entries`);
+        if (!res.ok) throw new Error('bad status');
+        render(await res.json());
+      } catch {
+        app.innerHTML = '<p class="empty">Couldn’t load entries.</p>';
+      }
+    }
+
+    window.addEventListener('hashchange', scrollToHash);
+    load();
+  </script>
 </Layout>
 
 <style>
@@ -43,33 +110,5 @@ for (const entry of entries) {
     margin: 0 0 1.75rem;
     color: var(--muted);
     font-size: 0.95rem;
-  }
-  .timeline {
-    position: relative;
-  }
-  .timeline::before {
-    content: '';
-    position: absolute;
-    left: 7px;
-    top: 6px;
-    bottom: 4px;
-    width: 2px;
-    background: var(--spine);
-  }
-  .month {
-    margin-bottom: 2rem;
-  }
-  .month:last-child {
-    margin-bottom: 0;
-  }
-  .month-label {
-    position: relative;
-    margin: 0 0 1.1rem;
-    padding-left: 28px;
-    font-size: 0.85rem;
-    font-weight: 700;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    color: var(--muted);
   }
 </style>

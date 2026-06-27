@@ -118,7 +118,6 @@ const { title } = Astro.props;
     border-color: var(--accent);
     color: var(--accent);
   }
-  /* Moon in light mode, sun in dark mode. */
   #theme-toggle .sun {
     display: none;
   }
@@ -127,5 +126,83 @@ const { title } = Astro.props;
   }
   [data-theme='dark'] #theme-toggle .moon {
     display: none;
+  }
+
+  /* Diary timeline — global so client-injected DOM is styled */
+  .loading,
+  .empty {
+    color: var(--muted);
+    font-size: 0.95rem;
+  }
+  .timeline {
+    position: relative;
+  }
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 7px;
+    top: 6px;
+    bottom: 4px;
+    width: 2px;
+    background: var(--spine);
+  }
+  .month {
+    margin-bottom: 2rem;
+  }
+  .month:last-child {
+    margin-bottom: 0;
+  }
+  .month-label {
+    position: relative;
+    margin: 0 0 1.1rem;
+    padding-left: 28px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .entry {
+    position: relative;
+    padding-left: 28px;
+    padding-bottom: 1.6rem;
+    scroll-margin-top: 2rem;
+  }
+  .entry:last-child {
+    padding-bottom: 0.5rem;
+  }
+  .entry .node {
+    position: absolute;
+    left: 1px;
+    top: 5px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--bg);
+    border: 2px solid var(--node);
+    transition: border-color 0.2s ease;
+  }
+  .entry .entry-link {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+  }
+  .entry time {
+    display: block;
+    margin-bottom: 0.3rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: var(--muted);
+  }
+  .entry .body p {
+    margin: 0;
+  }
+  .entry .body p + p {
+    margin-top: 0.75rem;
+  }
+  .entry:hover .node,
+  .entry:focus-within .node {
+    border-color: var(--accent);
   }
 </style>
