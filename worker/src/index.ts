@@ -302,6 +302,11 @@ export default {
       return new Response(ADMIN_HTML, { headers: { 'content-type': 'text/html; charset=utf-8' } });
     }
 
+    // Password check — used by the diary page to verify before revealing edit mode.
+    if (parts[0] === 'api' && parts[1] === 'auth' && parts.length === 2 && method === 'GET') {
+      return (await authorized(request, env)) ? json({ ok: true }) : json({ error: 'unauthorized' }, 401);
+    }
+
     if (parts[0] === 'api' && parts[1] === 'entries') {
       // Collection: list / create
       if (parts.length === 2) {

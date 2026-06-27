@@ -1,34 +1,232 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 
-// Worker origin. Filled with the real workers.dev URL after deploy.
+// Worker origin.
 const API_BASE = 'https://diary.hihihi198.workers.dev';
 ---
 <Layout title="Diary">
   <main>
-    <p class="lede">Short notes, most recent first.</p>
+    <div class="diary-head">
+      <p class="lede">Short notes, most recent first.</p>
+      <button id="edit-toggle" class="edit-toggle" type="button">Edit</button>
+    </div>
+
+    <form id="unlock-row" class="unlock-row" hidden>
+      <input id="pw-input" class="pw-input" type="password" placeholder="Password" autocomplete="current-password">
+      <button id="unlock-btn" type="submit">Unlock</button>
+      <span id="unlock-msg" class="unlock-msg"></span>
+    </form>
+
+    <section id="composer" class="composer" hidden>
+      <h2 id="composer-title" class="composer-title">New entry</h2>
+      <label class="field">
+        <span>Date</span>
+        <input id="c-date" type="date">
+      </label>
+      <label class="field">
+        <span>Tags <em>(optional, comma-separated)</em></span>
+        <input id="c-tags" type="text">
+      </label>
+      <label class="field">
+        <span>Entry <em>(Markdown)</em></span>
+        <textarea id="c-body"></textarea>
+      </label>
+      <div class="composer-actions">
+        <button id="c-save" type="button" class="primary">Post</button>
+        <button id="c-cancel" type="button">Cancel</button>
+      </div>
+      <p id="c-msg" class="composer-msg"></p>
+    </section>
+
     <div id="diary-app" data-api={API_BASE}>
       <p class="loading">Loading…</p>
     </div>
   </main>
+
   <script>
     const app = document.getElementById('diary-app');
-    const API = app?.dataset.api;
+    const API = app?.dataset.api || '';
 
-    function parseDate(s: string) {
-      return new Date(s);
-    }
-    function monthLabel(d: Date) {
-      return d.toLocaleDateString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' });
-    }
-    function fmtDate(d: Date) {
-      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+    const editToggle = document.getElementById('edit-toggle');
+    const unlockRow = document.getElementById('unlock-row');
+    const pwInput = document.getElementById('pw-input') as HTMLInputElement | null;
+    const unlockBtn = document.getElementById('unlock-btn');
+    const unlockMsg = document.getElementById('unlock-msg');
+    const composer = document.getElementById('composer');
+    const cTitle = document.getElementById('composer-title');
+    const cDate = document.getElementById('c-date') as HTMLInputElement | null;
+    const cTags = document.getElementById('c-tags') as HTMLInputElement | null;
+    const cBody = document.getElementById('c-body') as HTMLTextAreaElement | null;
+    const cSave = document.getElementById('c-save') as HTMLButtonElement | null;
+    const cCancel = document.getElementById('c-cancel');
+    const cMsg = document.getElementById('c-msg');
+
+    let unlocked = false;
+    let password = sessionStorage.getItem('diaryPw') || '';
+    let editingId: string | null = null;
+    let entries: any[] = [];
+
+    const todayStr = () => new Date().toISOString().slice(0, 10);
+    const parseTags = (s: string) => s.split(',').map((x) => x.trim()).filter(Boolean);
+    const escapeHtml = (s: string) =>
+      String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
+    const fmtDate = (d: Date) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+    const monthLabel = (d: Date) => d.toLocaleDateString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+    const authHeaders = () => ({ 'content-type': 'application/json', 'x-admin-password': password });
+    const setCMsg = (html: string, kind = '') => {
+      if (cMsg) { cMsg.innerHTML = html; cMsg.className = 'composer-msg ' + kind; }
+    };
+
+    async function checkAuth(pw: string) {
+      try {
+        const res = await fetch(`${API}/api/auth`, { headers: { 'x-admin-password': pw } });
+        return res.ok;
+      } catch {
+        return false;
+      }
     }
 
-    type Entry = { id: string; date: string; bodyHtml: string; tags: string[] };
+    async function tryAutoUnlock() {
+      if (!password) return;
+      if (await checkAuth(password)) enterEditMode();
+    }
 
-    function entryEl(e: Entry) {
-      const d = parseDate(e.date);
+    function enterEditMode() {
+      unlocked = true;
+      if (editToggle) { editToggle.textContent = 'Done'; editToggle.classList.add('active'); }
+      if (composer) composer.hidden = false;
+      if (unlockRow) unlockRow.hidden = true;
+      render();
+    }
+
+    function exitEditMode() {
+      unlocked = false;
+      if (editToggle) { editToggle.textContent = 'Edit'; editToggle.classList.remove('active'); }
+      if (composer) composer.hidden = true;
+      resetComposer();
+      render();
+    }
+
+    editToggle?.addEventListener('click', () => {
+      if (unlocked) exitEditMode();
+      else { if (unlockRow) unlockRow.hidden = false; pwInput?.focus(); }
+    });
+
+    unlockRow?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const pw = pwInput?.value || '';
+      if (!pw) { if (unlockMsg) unlockMsg.textContent = 'Enter your password.'; return; }
+      if (unlockBtn) unlockBtn.disabled = true;
+      const ok = await checkAuth(pw);
+      if (unlockBtn) unlockBtn.disabled = false;
+      if (ok) {
+        password = pw;
+        sessionStorage.setItem('diaryPw', pw);
+        if (pwInput) pwInput.value = '';
+        if (unlockMsg) unlockMsg.textContent = '';
+        enterEditMode();
+      } else {
+        if (unlockMsg) unlockMsg.textContent = 'Wrong password.';
+      }
+    });
+
+    function resetComposer() {
+      editingId = null;
+      if (cTitle) cTitle.textContent = 'New entry';
+      if (cSave) cSave.textContent = 'Post';
+      if (cCancel) cCancel.hidden = true;
+      if (cBody) cBody.value = '';
+      if (cTags) cTags.value = '';
+      if (cDate) cDate.value = todayStr();
+      setCMsg('');
+    }
+
+    cSave?.addEventListener('click', async () => {
+      const body = cBody?.value.trim() || '';
+      if (!body) { setCMsg('Entry is empty.', 'err'); return; }
+      const payload = JSON.stringify({
+        date: cDate?.value || todayStr(),
+        body,
+        tags: parseTags(cTags?.value || ''),
+      });
+      const url = editingId ? `${API}/api/entries/${encodeURIComponent(editingId)}` : `${API}/api/entries`;
+      const method = editingId ? 'PUT' : 'POST';
+      if (cSave) cSave.disabled = true;
+      try {
+        const res = await fetch(url, { method, headers: authHeaders(), body: payload });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'failed');
+        setCMsg(editingId ? 'Updated.' : 'Posted.', 'ok');
+        resetComposer();
+        await load();
+      } catch (err: any) {
+        setCMsg('Error: ' + escapeHtml(err.message), 'err');
+      } finally {
+        if (cSave) cSave.disabled = false;
+      }
+    });
+    cCancel?.addEventListener('click', resetComposer);
+
+    async function startEdit(id: string) {
+      try {
+        const res = await fetch(`${API}/api/entries/${encodeURIComponent(id)}`);
+        if (!res.ok) return;
+        const full = await res.json();
+        editingId = full.id;
+        if (cTitle) cTitle.textContent = 'Edit entry';
+        if (cSave) cSave.textContent = 'Update';
+        if (cCancel) cCancel.hidden = false;
+        if (cDate) cDate.value = full.date.slice(0, 10);
+        if (cTags) cTags.value = (full.tags || []).join(', ');
+        if (cBody) cBody.value = full.body;
+        setCMsg('Editing entry.', '');
+        composer?.scrollIntoView({ behavior: 'smooth' });
+      } catch {
+        setCMsg('Could not load entry.', 'err');
+      }
+    }
+
+    async function deleteEntry(id: string) {
+      if (!confirm('Delete this entry permanently?')) return;
+      try {
+        const res = await fetch(`${API}/api/entries/${encodeURIComponent(id)}`, {
+          method: 'DELETE',
+          headers: { 'x-admin-password': password },
+        });
+        if (!res.ok) { setCMsg('Delete failed.', 'err'); return; }
+        if (editingId === id) resetComposer();
+        await load();
+      } catch {
+        setCMsg('Delete failed.', 'err');
+      }
+    }
+
+    // Event delegation for the inline Edit/Delete buttons.
+    app?.addEventListener('click', (ev) => {
+      const target = ev.target;
+      if (!(target instanceof Element)) return;
+      const btn = target.closest('button');
+      if (!btn) return;
+      const entry = btn.closest('.entry');
+      if (!entry || !entry.id) return;
+      const id = entry.id.replace(/^entry-/, '');
+      if (btn.classList.contains('editbtn')) startEdit(id);
+      else if (btn.classList.contains('delbtn')) deleteEntry(id);
+    });
+
+    async function load() {
+      if (!app) return;
+      try {
+        const res = await fetch(`${API}/api/entries`);
+        entries = await res.json();
+        render();
+      } catch {
+        app.innerHTML = `<p class="empty">Couldn’t load entries.</p>`;
+      }
+    }
+
+    function entryEl(e: any) {
+      const d = new Date(e.date);
       const art = document.createElement('article');
       art.className = 'entry';
       art.id = 'entry-' + e.id;
@@ -46,24 +244,32 @@ const API_BASE = 'https://diary.hihihi198.workers.dev';
       body.innerHTML = e.bodyHtml;
       a.append(time, body);
       art.append(node, a);
+      if (unlocked) {
+        const tools = document.createElement('div');
+        tools.className = 'entry-tools';
+        const editB = document.createElement('button');
+        editB.type = 'button';
+        editB.className = 'editbtn';
+        editB.textContent = 'Edit';
+        const delB = document.createElement('button');
+        delB.type = 'button';
+        delB.className = 'delbtn';
+        delB.textContent = 'Delete';
+        tools.append(editB, delB);
+        art.append(tools);
+      }
       return art;
     }
 
-    function render(entries: Entry[]) {
+    function render() {
       if (!app) return;
-      if (!entries.length) {
-        app.innerHTML = '<p class="empty">No entries yet.</p>';
-        return;
-      }
-      const groups: { key: string; label: string; entries: Entry[] }[] = [];
+      if (!entries.length) { app.innerHTML = '<p class="empty">No entries yet.</p>'; return; }
+      const groups: { key: string; label: string; entries: any[] }[] = [];
       for (const e of entries) {
-        const d = parseDate(e.date);
+        const d = new Date(e.date);
         const key = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
         let g = groups.find((x) => x.key === key);
-        if (!g) {
-          g = { key, label: monthLabel(d), entries: [] };
-          groups.push(g);
-        }
+        if (!g) { g = { key, label: monthLabel(d), entries: [] }; groups.push(g); }
         g.entries.push(e);
       }
       const tl = document.createElement('div');
@@ -89,26 +295,148 @@ const API_BASE = 'https://diary.hihihi198.workers.dev';
       if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
-    async function load() {
-      if (!app || !API) return;
-      try {
-        const res = await fetch(`${API}/api/entries`);
-        if (!res.ok) throw new Error('bad status');
-        render(await res.json());
-      } catch {
-        app.innerHTML = '<p class="empty">Couldn’t load entries.</p>';
-      }
-    }
-
     window.addEventListener('hashchange', scrollToHash);
+
+    if (cDate) cDate.value = todayStr();
     load();
+    tryAutoUnlock();
   </script>
 </Layout>
 
 <style>
-  .lede {
+  .diary-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
     margin: 0 0 1.75rem;
+  }
+  .lede {
+    margin: 0;
     color: var(--muted);
     font-size: 0.95rem;
+  }
+  .edit-toggle {
+    font: inherit;
+    font-size: 0.8rem;
+    color: var(--muted);
+    background: none;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 0.25rem 0.85rem;
+    cursor: pointer;
+    transition: color 0.2s ease, border-color 0.2s ease;
+  }
+  .edit-toggle:hover,
+  .edit-toggle.active {
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+
+  .unlock-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0 0 1.5rem;
+  }
+  .unlock-row :global(.pw-input) {
+    font: inherit;
+    padding: 0.35rem 0.6rem;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--bg);
+    color: var(--text);
+    max-width: 200px;
+  }
+  .unlock-row button {
+    font: inherit;
+    font-size: 0.85rem;
+    padding: 0.35rem 0.9rem;
+    border: none;
+    border-radius: 6px;
+    background: var(--accent);
+    color: #fff;
+    cursor: pointer;
+  }
+  .unlock-msg {
+    font-size: 0.85rem;
+    color: #b91c1c;
+  }
+
+  .composer {
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 2rem;
+    background: var(--bg);
+  }
+  .composer-title {
+    margin: 0 0 1rem;
+    font-size: 1rem;
+    color: var(--text);
+  }
+  .composer :global(.field) {
+    display: block;
+    margin-bottom: 0.85rem;
+  }
+  .composer :global(.field span) {
+    display: block;
+    font-size: 0.78rem;
+    color: var(--muted);
+    margin-bottom: 0.3rem;
+  }
+  .composer :global(.field em) {
+    font-style: normal;
+    opacity: 0.8;
+  }
+  .composer :global(.field input),
+  .composer :global(.field textarea) {
+    width: 100%;
+    font: inherit;
+    padding: 0.5rem;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--text);
+    box-sizing: border-box;
+  }
+  .composer :global(.field textarea) {
+    min-height: 120px;
+    resize: vertical;
+  }
+  .composer-actions {
+    display: flex;
+    gap: 0.5rem;
+  }
+  .composer-actions button {
+    font: inherit;
+    font-size: 0.9rem;
+    padding: 0.5rem 1.2rem;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  .composer-actions :global(.primary) {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+  }
+  .composer-actions :global(.primary:disabled) {
+    opacity: 0.6;
+  }
+  .composer-actions button:not(.primary) {
+    background: var(--bg);
+    color: var(--muted);
+    border: 1px solid var(--line);
+  }
+  .composer-msg {
+    margin: 0.75rem 0 0;
+    font-size: 0.85rem;
+    min-height: 1em;
+  }
+  .composer-msg.ok {
+    color: #047857;
+  }
+  .composer-msg.err {
+    color: #b91c1c;
   }
 </style>

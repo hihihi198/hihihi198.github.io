@@ -205,4 +205,29 @@ const { title } = Astro.props;
   .entry:focus-within .node {
     border-color: var(--accent);
   }
+
+  /* Inline edit/delete tools (edit mode on the diary page) */
+  .entry-tools {
+    margin-top: 0.5rem;
+    display: flex;
+    gap: 0.4rem;
+  }
+  .entry-tools button {
+    font: inherit;
+    font-size: 0.78rem;
+    padding: 0.2rem 0.6rem;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--bg);
+    color: var(--muted);
+    cursor: pointer;
+  }
+  .entry-tools button:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+  .entry-tools button.delbtn:hover {
+    color: #b91c1c;
+    border-color: #b91c1c;
+  }
 </style>
