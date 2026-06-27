@@ -62,7 +62,7 @@ const API_BASE = 'https://diary.hihihi198.workers.dev';
     const cMsg = document.getElementById('c-msg');
 
     let unlocked = false;
-    let password = sessionStorage.getItem('diaryPw') || '';
+    let password = '';
     let editingId: string | null = null;
     let entries: any[] = [];
 
@@ -84,11 +84,6 @@ const API_BASE = 'https://diary.hihihi198.workers.dev';
       } catch {
         return false;
       }
-    }
-
-    async function tryAutoUnlock() {
-      if (!password) return;
-      if (await checkAuth(password)) enterEditMode();
     }
 
     function enterEditMode() {
@@ -121,7 +116,6 @@ const API_BASE = 'https://diary.hihihi198.workers.dev';
       if (unlockBtn) unlockBtn.disabled = false;
       if (ok) {
         password = pw;
-        sessionStorage.setItem('diaryPw', pw);
         if (pwInput) pwInput.value = '';
         if (unlockMsg) unlockMsg.textContent = '';
         enterEditMode();
@@ -347,7 +341,6 @@ const API_BASE = 'https://diary.hihihi198.workers.dev';
 
     if (cDate) cDate.value = todayStr();
     load();
-    tryAutoUnlock();
   </script>
 </Layout>
 
