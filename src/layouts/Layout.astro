@@ -230,4 +230,46 @@ const { title } = Astro.props;
     color: #b91c1c;
     border-color: #b91c1c;
   }
+
+  /* Entry head: date + per-entry link button */
+  .entry-head {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    margin-bottom: 0.3rem;
+  }
+  .entry-head time {
+    margin-bottom: 0;
+  }
+  .linkbtn {
+    margin-left: auto;
+    font: inherit;
+    font-size: 0.78rem;
+    color: var(--muted);
+    background: none;
+    border: none;
+    padding: 0 0.2rem;
+    cursor: pointer;
+    opacity: 0.55;
+    transition: color 0.2s ease, opacity 0.2s ease;
+  }
+  .linkbtn:hover {
+    color: var(--accent);
+    opacity: 1;
+  }
+
+  /* Deep-link highlight */
+  .entry {
+    transition: background-color 0.3s ease;
+  }
+  .entry.flash {
+    background: rgba(79, 70, 229, 0.07);
+    border-radius: 8px;
+  }
+  :root[data-theme='dark'] .entry.flash {
+    background: rgba(155, 157, 248, 0.1);
+  }
+  .entry.flash .node {
+    border-color: var(--accent);
+  }
 </style>

@@ -201,7 +201,34 @@ const API_BASE = 'https://diary.hihihi198.workers.dev';
       }
     }
 
-    // Event delegation for the inline Edit/Delete buttons.
+    // Per-entry link button: set the hash (jump), flash, and copy the permalink.
+    function linkEntry(id: string, btn: HTMLButtonElement) {
+      if (location.hash !== '#' + id) {
+        location.hash = id; // fires hashchange -> scrollToHash
+      } else {
+        scrollToHash();
+      }
+      copyLink(id, btn);
+    }
+
+    function copyLink(id: string, btn: HTMLButtonElement) {
+      const url = location.origin + location.pathname + '#' + id;
+      if (!navigator.clipboard) return;
+      navigator.clipboard.writeText(url).then(() => {
+        const prev = btn.textContent;
+        btn.textContent = '✓';
+        setTimeout(() => { btn.textContent = prev; }, 1000);
+      }).catch(() => {});
+    }
+
+    function flash(el: Element) {
+      el.classList.remove('flash');
+      void (el as HTMLElement).offsetWidth; // restart the transition
+      el.classList.add('flash');
+      setTimeout(() => el.classList.remove('flash'), 2000);
+    }
+
+    // Event delegation for the per-entry buttons.
     app?.addEventListener('click', (ev) => {
       const target = ev.target;
       if (!(target instanceof Element)) return;
@@ -210,7 +237,8 @@ const API_BASE = 'https://diary.hihihi198.workers.dev';
       const entry = btn.closest('.entry');
       if (!entry || !entry.id) return;
       const id = entry.id.replace(/^entry-/, '');
-      if (btn.classList.contains('editbtn')) startEdit(id);
+      if (btn.classList.contains('linkbtn')) linkEntry(id, btn);
+      else if (btn.classList.contains('editbtn')) startEdit(id);
       else if (btn.classList.contains('delbtn')) deleteEntry(id);
     });
 
@@ -230,20 +258,32 @@ const API_BASE = 'https://diary.hihihi198.workers.dev';
       const art = document.createElement('article');
       art.className = 'entry';
       art.id = 'entry-' + e.id;
+
       const node = document.createElement('span');
       node.className = 'node';
       node.setAttribute('aria-hidden', 'true');
-      const a = document.createElement('a');
-      a.className = 'entry-link';
-      a.href = '#' + e.id;
+
+      const content = document.createElement('div');
+      content.className = 'entry-content';
+
+      const head = document.createElement('div');
+      head.className = 'entry-head';
       const time = document.createElement('time');
       time.dateTime = e.date;
       time.textContent = fmtDate(d);
+      const linkB = document.createElement('button');
+      linkB.type = 'button';
+      linkB.className = 'linkbtn';
+      linkB.textContent = '#';
+      linkB.title = 'Link / jump to this entry';
+      head.append(time, linkB);
+
       const body = document.createElement('div');
       body.className = 'body';
       body.innerHTML = e.bodyHtml;
-      a.append(time, body);
-      art.append(node, a);
+
+      content.append(head, body);
+
       if (unlocked) {
         const tools = document.createElement('div');
         tools.className = 'entry-tools';
@@ -256,8 +296,10 @@ const API_BASE = 'https://diary.hihihi198.workers.dev';
         delB.className = 'delbtn';
         delB.textContent = 'Delete';
         tools.append(editB, delB);
-        art.append(tools);
+        content.append(tools);
       }
+
+      art.append(node, content);
       return art;
     }
 
@@ -289,10 +331,16 @@ const API_BASE = 'https://diary.hihihi198.workers.dev';
       scrollToHash();
     }
 
+    // Scroll to + flash the entry named in the URL hash. Deferred a frame so
+    // layout has settled after the async render (fixes deep-links on fresh load).
     function scrollToHash() {
       if (!location.hash) return;
       const t = document.getElementById('entry-' + location.hash.slice(1));
-      if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      if (!t) return;
+      requestAnimationFrame(() => {
+        t.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        flash(t);
+      });
     }
 
     window.addEventListener('hashchange', scrollToHash);
