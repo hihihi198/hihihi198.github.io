@@ -3,6 +3,7 @@ import { marked } from 'marked';
 interface Env {
   DIARY: KVNamespace;
   ADMIN_PASSWORD: string;
+  POST_TOKEN: string;
 }
 
 interface Entry {
@@ -41,8 +42,17 @@ async function verify(a: string, b: string): Promise<boolean> {
   return diff === 0;
 }
 
-function authorized(request: Request, env: Env): Promise<boolean> {
-  return verify(request.headers.get('x-admin-password') ?? '', env.ADMIN_PASSWORD ?? '');
+async function authorized(request: Request, env: Env): Promise<boolean> {
+  if (!env.ADMIN_PASSWORD) return false;
+  return verify(request.headers.get('x-admin-password') ?? '', env.ADMIN_PASSWORD);
+}
+
+// Posting may be authorized by the admin password OR a POST-only token
+// (e.g. for an external agent). Edit/delete/auth still require the admin password.
+async function canPost(request: Request, env: Env): Promise<boolean> {
+  if (await authorized(request, env)) return true;
+  if (!env.POST_TOKEN) return false;
+  return verify(request.headers.get('x-post-token') ?? '', env.POST_TOKEN);
 }
 
 type Parsed =
@@ -314,7 +324,7 @@ export default {
           return json((await listEntries(env)).map(publicView));
         }
         if (method === 'POST') {
-          if (!(await authorized(request, env))) return json({ error: 'unauthorized' }, 401);
+          if (!(await canPost(request, env))) return json({ error: 'unauthorized' }, 401);
           let payload: any;
           try {
             payload = await request.json();
