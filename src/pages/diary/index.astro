@@ -4,44 +4,42 @@ import Layout from '../../layouts/Layout.astro';
 // Worker origin.
 const API_BASE = 'https://diary.hihihi198.workers.dev';
 ---
-<Layout title="Diary">
-  <main>
-    <div class="diary-head">
-      <p class="lede">Short notes, most recent first.</p>
-      <button id="edit-toggle" class="edit-toggle" type="button">Edit</button>
+<Layout title="Diary · hihihi198">
+  <div class="diary-head">
+    <p class="lede">Short notes, most recent first.</p>
+    <button id="edit-toggle" class="edit-toggle" type="button">Edit</button>
+  </div>
+
+  <form id="unlock-row" class="unlock-row" hidden>
+    <input id="pw-input" class="pw-input" type="password" placeholder="Password" autocomplete="current-password">
+    <button id="unlock-btn" type="submit">Unlock</button>
+    <span id="unlock-msg" class="unlock-msg"></span>
+  </form>
+
+  <section id="composer" class="composer" hidden>
+    <h2 id="composer-title" class="composer-title">New entry</h2>
+    <label class="field">
+      <span>Date</span>
+      <input id="c-date" type="date">
+    </label>
+    <label class="field">
+      <span>Tags <em>(optional, comma-separated)</em></span>
+      <input id="c-tags" type="text">
+    </label>
+    <label class="field">
+      <span>Entry <em>(Markdown)</em></span>
+      <textarea id="c-body"></textarea>
+    </label>
+    <div class="composer-actions">
+      <button id="c-save" type="button" class="primary">Post</button>
+      <button id="c-cancel" type="button">Cancel</button>
     </div>
+    <p id="c-msg" class="composer-msg"></p>
+  </section>
 
-    <form id="unlock-row" class="unlock-row" hidden>
-      <input id="pw-input" class="pw-input" type="password" placeholder="Password" autocomplete="current-password">
-      <button id="unlock-btn" type="submit">Unlock</button>
-      <span id="unlock-msg" class="unlock-msg"></span>
-    </form>
-
-    <section id="composer" class="composer" hidden>
-      <h2 id="composer-title" class="composer-title">New entry</h2>
-      <label class="field">
-        <span>Date</span>
-        <input id="c-date" type="date">
-      </label>
-      <label class="field">
-        <span>Tags <em>(optional, comma-separated)</em></span>
-        <input id="c-tags" type="text">
-      </label>
-      <label class="field">
-        <span>Entry <em>(Markdown)</em></span>
-        <textarea id="c-body"></textarea>
-      </label>
-      <div class="composer-actions">
-        <button id="c-save" type="button" class="primary">Post</button>
-        <button id="c-cancel" type="button">Cancel</button>
-      </div>
-      <p id="c-msg" class="composer-msg"></p>
-    </section>
-
-    <div id="diary-app" data-api={API_BASE}>
-      <p class="loading">Loading…</p>
-    </div>
-  </main>
+  <div id="diary-app" data-api={API_BASE}>
+    <p class="loading">Loading…</p>
+  </div>
 
   <script>
     const app = document.getElementById('diary-app');
@@ -343,141 +341,3 @@ const API_BASE = 'https://diary.hihihi198.workers.dev';
     load();
   </script>
 </Layout>
-
-<style>
-  .diary-head {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 1rem;
-    margin: 0 0 1.75rem;
-  }
-  .lede {
-    margin: 0;
-    color: var(--muted);
-    font-size: 0.95rem;
-  }
-  .edit-toggle {
-    font: inherit;
-    font-size: 0.8rem;
-    color: var(--muted);
-    background: none;
-    border: 1px solid var(--line);
-    border-radius: 999px;
-    padding: 0.25rem 0.85rem;
-    cursor: pointer;
-    transition: color 0.2s ease, border-color 0.2s ease;
-  }
-  .edit-toggle:hover,
-  .edit-toggle.active {
-    color: var(--accent);
-    border-color: var(--accent);
-  }
-
-  .unlock-row {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin: 0 0 1.5rem;
-  }
-  .unlock-row :global(.pw-input) {
-    font: inherit;
-    padding: 0.35rem 0.6rem;
-    border: 1px solid var(--line);
-    border-radius: 6px;
-    background: var(--bg);
-    color: var(--text);
-    max-width: 200px;
-  }
-  .unlock-row button {
-    font: inherit;
-    font-size: 0.85rem;
-    padding: 0.35rem 0.9rem;
-    border: none;
-    border-radius: 6px;
-    background: var(--accent);
-    color: #fff;
-    cursor: pointer;
-  }
-  .unlock-msg {
-    font-size: 0.85rem;
-    color: #b91c1c;
-  }
-
-  .composer {
-    border: 1px solid var(--line);
-    border-radius: 12px;
-    padding: 1.25rem;
-    margin-bottom: 2rem;
-    background: var(--bg);
-  }
-  .composer-title {
-    margin: 0 0 1rem;
-    font-size: 1rem;
-    color: var(--text);
-  }
-  .composer :global(.field) {
-    display: block;
-    margin-bottom: 0.85rem;
-  }
-  .composer :global(.field span) {
-    display: block;
-    font-size: 0.78rem;
-    color: var(--muted);
-    margin-bottom: 0.3rem;
-  }
-  .composer :global(.field em) {
-    font-style: normal;
-    opacity: 0.8;
-  }
-  .composer :global(.field input),
-  .composer :global(.field textarea) {
-    width: 100%;
-    font: inherit;
-    padding: 0.5rem;
-    border: 1px solid var(--line);
-    border-radius: 8px;
-    background: var(--bg);
-    color: var(--text);
-    box-sizing: border-box;
-  }
-  .composer :global(.field textarea) {
-    min-height: 120px;
-    resize: vertical;
-  }
-  .composer-actions {
-    display: flex;
-    gap: 0.5rem;
-  }
-  .composer-actions button {
-    font: inherit;
-    font-size: 0.9rem;
-    padding: 0.5rem 1.2rem;
-    border-radius: 8px;
-    cursor: pointer;
-  }
-  .composer-actions :global(.primary) {
-    background: var(--accent);
-    color: #fff;
-    border: none;
-  }
-  .composer-actions :global(.primary:disabled) {
-    opacity: 0.6;
-  }
-  .composer-actions button:not(.primary) {
-    background: var(--bg);
-    color: var(--muted);
-    border: 1px solid var(--line);
-  }
-  .composer-msg {
-    margin: 0.75rem 0 0;
-    font-size: 0.85rem;
-    min-height: 1em;
-  }
-  .composer-msg.ok {
-    color: #047857;
-  }
-  .composer-msg.err {
-    color: #b91c1c;
-  }
-</style>

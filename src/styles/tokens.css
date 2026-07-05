@@ -1,0 +1,37 @@
+/* Design tokens — edit these to re-theme the entire site.
+   This is the fast lever: change colors / fonts / radii / width here and
+   everything updates. Component rules live in components.css. */
+:root {
+  /* Color */
+  --color-bg: #ffffff;
+  --color-text: #1f2328;
+  --color-muted: #6b7280;
+  --color-line: #e5e7eb;
+  --color-accent: #4f46e5;
+  --color-spine: #d7dbe0;
+  --color-node: #b4bac3;
+
+  /* Typography */
+  --font-body: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+
+  /* Layout */
+  --max-w: 680px;
+  --pad-x: 1.25rem;
+
+  /* Radii */
+  --radius-sm: 6px;
+  --radius: 8px;
+  --radius-lg: 12px;
+  --radius-pill: 999px;
+}
+
+:root[data-theme='dark'] {
+  --color-bg: #11141a;
+  --color-text: #e7e9ec;
+  --color-muted: #9aa1ad;
+  --color-line: #262b33;
+  --color-accent: #9b9df8;
+  --color-spine: #2c323b;
+  --color-node: #4a515c;
+}

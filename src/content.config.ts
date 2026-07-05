@@ -1,7 +1,8 @@
 import { defineCollection, z } from 'astro:content';
 import { glob } from 'astro/loaders';
 
-// One markdown file per diary entry, living under src/content/diary/.
+// Diary entries (kept for backup; the live diary reads from the Cloudflare
+// Worker KV, not from these files).
 const diary = defineCollection({
   loader: glob({ pattern: '**/*.md', base: './src/content/diary' }),
   schema: z.object({
@@ -11,4 +12,16 @@ const diary = defineCollection({
   }),
 });
 
-export const collections = { diary };
+// Articles — the static blog. Markdown in git, rendered at build time.
+const articles = defineCollection({
+  loader: glob({ pattern: '**/*.md', base: './src/content/articles' }),
+  schema: z.object({
+    title: z.string(),
+    summary: z.string().optional(),
+    date: z.coerce.date(),
+    tags: z.array(z.string()).default([]),
+    draft: z.boolean().default(false),
+  }),
+});
+
+export const collections = { diary, articles };
