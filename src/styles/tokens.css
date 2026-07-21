@@ -1,37 +1,48 @@
 /* Design tokens — edit these to re-theme the entire site.
    This is the fast lever: change colors / fonts / radii / width here and
-   everything updates. Component rules live in components.css. */
+   everything updates. Component rules live in components.css.
+
+   Dark is the home theme; the light :root values are its daytime adaptation
+   (warm paper instead of warm ink). Add new colors to BOTH blocks. */
 :root {
-  /* Color */
-  --color-bg: #ffffff;
-  --color-text: #1f2328;
-  --color-muted: #6b7280;
-  --color-line: #e5e7eb;
-  --color-accent: #4f46e5;
-  --color-spine: #d7dbe0;
-  --color-node: #b4bac3;
+  /* Color — light */
+  --color-bg: #faf5ec;
+  --color-text: #26221b;
+  --color-muted: #6e675a;
+  --color-line: #e5ddc9;
+  --color-accent: #8a5a0b;
+  --color-panel: #f3ecda;
+  --color-spine: #ddd4bf;
+  --color-node: #a89e88;
+  --color-on-accent: #ffffff;
+  --color-danger: #b91c1c;
+  --color-ok: #047857;
 
   /* Typography */
-  --font-body: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  --font-body: 'Newsreader', Georgia, 'Times New Roman', serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
   /* Layout */
   --max-w: 680px;
   --pad-x: 1.25rem;
 
-  /* Radii */
-  --radius-sm: 6px;
-  --radius: 8px;
-  --radius-lg: 12px;
+  /* Radii — nearly square; hairline rules do the visual work */
+  --radius-sm: 3px;
+  --radius: 4px;
+  --radius-lg: 6px;
   --radius-pill: 999px;
 }
 
 :root[data-theme='dark'] {
-  --color-bg: #11141a;
-  --color-text: #e7e9ec;
-  --color-muted: #9aa1ad;
-  --color-line: #262b33;
-  --color-accent: #9b9df8;
-  --color-spine: #2c323b;
-  --color-node: #4a515c;
+  --color-bg: #16130f;
+  --color-text: #e9e2d4;
+  --color-muted: #9c927e;
+  --color-line: #2c2721;
+  --color-accent: #e5b567;
+  --color-panel: #1e1a14;
+  --color-spine: #332e26;
+  --color-node: #5c5546;
+  --color-on-accent: #16130f;
+  --color-danger: #e06c5b;
+  --color-ok: #6fbf8f;
 }

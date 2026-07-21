@@ -1,5 +1,6 @@
 /* Single entry point — imported once by Layout.astro.
    To restyle: edit tokens.css (re-theme) or components.css (full overhaul). */
+@import './fonts.css';
 @import './tokens.css';
 @import './base.css';
 @import './components.css';

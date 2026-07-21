@@ -23,7 +23,8 @@ Unrelated, do not touch: a separate repo serves `https://hihihi198.github.io/nav
 ## Stack
 
 - **Astro 7**, static output, TypeScript. **No CSS framework, no UI framework** (no Tailwind/React) — keep it that way unless the user asks.
-- Markdown rendering + Shiki syntax highlighting are built into Astro.
+- Markdown uses the **unified (remark/rehype) pipeline** via `@astrojs/markdown-remark` — **not** Astro 7's default Sätteri — because math needs `remark-math` + `rehype-katex` (see `astro.config.mjs` → `markdown.processor`). Shiki highlighting runs on the same pipeline with dual themes (`rose-pine` / `rose-pine-dawn`) that emit `--shiki-dark` CSS vars; `components.css` maps them per theme and overrides the block background with `--color-panel`.
+- **KaTeX math** in article bodies: `$inline$` and `$$display$$`. The KaTeX CSS is imported by `src/pages/articles/[slug].astro`, so only article pages pay for it.
 - **Cloudflare Worker + KV** backend for the diary (`worker/`), deployed separately from the site.
 
 ## The styling system — read this before any redesign
@@ -32,10 +33,11 @@ Unrelated, do not touch: a separate repo serves `https://hihihi198.github.io/nav
 
 ```
 src/styles/
+  fonts.css       # @font-face for the self-hosted fonts in public/fonts/
   tokens.css      # design tokens (+ dark variants) — the fast re-theme lever
   base.css        # reset, body, element defaults — no classes
   components.css  # EVERY component rule, keyed by semantic class name
-  main.css        # @imports the three above; imported once by Layout.astro
+  main.css        # @imports the four above; imported once by Layout.astro
 ```
 
 Rules to preserve:
@@ -63,7 +65,7 @@ Keep these stable; renaming means editing markup too.
 
 ### Dark mode
 
-`Layout.astro` sets `data-theme="light|dark"` on `<html>` **before paint** (inline script, avoids a flash), respecting `localStorage.theme` then the system preference. A header button toggles it. Dark values live in `:root[data-theme='dark']` in `tokens.css` — **add new colors there too**, or dark mode breaks.
+**Dark is the home theme.** `Layout.astro` sets `data-theme="light|dark"` on `<html>` **before paint** (inline script, avoids a flash): `localStorage.theme` wins, otherwise **dark** — the OS preference is deliberately not consulted. A header button toggles it. Dark values live in `:root[data-theme='dark']` in `tokens.css` — **add new colors there too**, or dark mode breaks.
 
 ## Content
 
@@ -83,6 +85,7 @@ Body in Markdown.
 ```
 
 Slug = filename. Queries filter drafts with `getCollection('articles', ({ data }) => !data.draft)`.
+Math works in bodies: `$e^{i\pi}$` inline, `$$...$$` display (rendered by KaTeX at build time).
 
 ### Diary (dynamic, KV)
 
@@ -149,6 +152,8 @@ When starting the dev server, prefer background mode: `astro dev --background`, 
 - Old commits contain a harmless `.claude/settings.local.json`; the user **declined** scrubbing git history. Don't re-propose it.
 - Astro's `is:global` blocks don't support `:global()` — use plain selectors there (lightningcss warns and drops the rule).
 - Dates are handled in **UTC** (`timeZone: 'UTC'` when formatting) so entries don't shift a day.
+- Fonts are self-hosted in `public/fonts/` (Newsreader variable serif + IBM Plex Mono, both OFL) and declared in `fonts.css`; `Layout.astro` preloads the text serif. Keep the Georgia/Menlo fallback stacks in `tokens.css` intact.
+- `base.css` has `[hidden] { display: none !important }` — the diary toggles sections with the `hidden` attribute, and author `display` rules would otherwise beat the UA rule and show them on load.
 - Not built yet, on the roadmap: a `/toolkit` section (interactive tools). One repo, route-based sections — the user chose this over splitting repos.
 
 ## Astro docs

@@ -25,3 +25,12 @@ function greet(name: string) {
 ```
 
 That's a code block with syntax highlighting (Astro ships Shiki by default).
+
+## Math
+
+Inline math like $e^{i\pi} + 1 = 0$ should render inside a sentence, and a display
+block should sit centered on its own line:
+
+$$
+\int_{-\infty}^{\infty} e^{-x^2}\,dx = \sqrt{\pi}
+$$
