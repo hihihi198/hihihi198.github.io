@@ -23,7 +23,9 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          # Keep this major in sync with the local npm: npm 11 (Node 24) writes
+          # lockfiles that npm 10 (Node 22) rejects as out of sync.
+          node-version: 24
           cache: npm
       - name: Setup Pages
         uses: actions/configure-pages@v5
