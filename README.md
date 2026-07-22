@@ -1,43 +1,55 @@
-# Astro Starter Kit: Minimal
+# hihihi198.github.io
+
+A personal site at **https://hihihi198.github.io** — a static **blog** plus a dynamic **diary**.
+
+- **Blog** — Markdown articles in `src/content/articles/`, built at deploy time by **Astro 7** (static output, no UI/CSS framework). Publish by pushing to `main`; GitHub Actions rebuilds and deploys to Pages. Bodies support KaTeX math (`$inline$`, `$$display$$`).
+- **Diary** — entries live in **Cloudflare KV** and are served by a **Worker** (`worker/`); the `/diary/` page fetches them client-side, so posting from the UI is instant — no rebuild. The Worker deploys separately (see `AGENTS.md`).
+- **Styling** — a swappable layer: `fonts.css` → `tokens.css` → `base.css` → `components.css` under `src/styles/`, with semantic class names as the stable contract. Current theme: dark-first editorial, self-hosted Newsreader + IBM Plex Mono (`public/fonts/`).
+
+## Posting an article
 
 ```sh
-npm create astro@latest -- --template minimal
+npm run new     # prompts for title/summary/tags, writes src/content/articles/<slug>.md
+#   ...write the body...
+npm run ship    # builds, commits the article, pushes — the site redeploys in ~a minute
 ```
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+- Slug and date (UTC+8) are generated; the filename becomes the URL (`/articles/<slug>/`).
+- Optional frontmatter: `summary` (shown on cards), `tags` (drives `/tags/`), `draft: true` (hides it everywhere).
+- Bodies get syntax highlighting and KaTeX math (`$inline$`, `$$display$$`).
+- `npm run ship` commits **only** `src/content/articles/` — other working-tree changes stay uncommitted.
 
-## 🚀 Project Structure
+### Manually, from the terminal
 
-Inside of your Astro project, you'll see the following folders and files:
+If you'd rather skip the scripts:
 
-```text
-/
-├── public/
-├── src/
-│   └── pages/
-│       └── index.astro
-└── package.json
-```
+1. Create `src/content/articles/<slug>.md` yourself — the filename becomes the URL:
 
-Astro looks for `.astro` or `.md` files in the `src/pages/` directory. Each page is exposed as a route based on its file name.
+   ```md
+   ---
+   title: My post          # required
+   date: 2026-07-21        # required, UTC+8 calendar day
+   summary: One line.      # optional — shown on cards
+   tags: [essay, note]     # optional — drives /tags/
+   draft: false            # optional — true hides it from list/tags/routes
+   ---
 
-There's nothing special about `src/components/`, but that's where we like to put any Astro/React/Vue/Svelte/Preact components.
+   Body in Markdown (code highlighting and KaTeX math included).
+   ```
 
-Any static assets, like images, can be placed in the `public/` directory.
+2. `npm run build` to catch content errors, then commit and push to `main` — same deploy as `npm run ship`.
 
-## 🧞 Commands
+(Diary entries don't touch git at all — they're posted from `/diary/` or the Worker API.)
 
-All commands are run from the root of the project, from a terminal:
+## Commands
 
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `npm install`             | Installs dependencies                            |
-| `npm run dev`             | Starts local dev server at `localhost:4321`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
+| Command | Action |
+| :-- | :-- |
+| `npm install` | Install dependencies |
+| `npm run dev` | Local dev server at `localhost:4321` |
+| `npm run build` | Build the production site to `./dist/` (run before committing) |
 
-## 👀 Want to learn more?
+## Documentation
 
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+- `AGENTS.md` — the real docs: architecture, the styling system, content formats, the diary Worker API, and deploy workflows.
+- `docs/openclaw.md` — posting diary entries programmatically (post token).
