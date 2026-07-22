@@ -156,6 +156,7 @@ When starting the dev server, prefer background mode: `astro dev --background`, 
 - Dates are **calendar days, not instants** — formatted with `timeZone: 'UTC'` so they never shift. The project default timezone is **UTC+8**: set article `date` to the UTC+8 calendar day. The diary Worker still defaults entry dates to the UTC day (change there means a worker edit + redeploy).
 - Fonts are self-hosted in `public/fonts/` (Newsreader variable serif + IBM Plex Mono, both OFL) and declared in `fonts.css`; `Layout.astro` preloads the text serif. Keep the Georgia/Menlo fallback stacks in `tokens.css` intact.
 - `base.css` has `[hidden] { display: none !important }` — the diary toggles sections with the `hidden` attribute, and author `display` rules would otherwise beat the UA rule and show them on load.
+- **Keep `katex` pinned to `^0.16`.** rehype-katex renders with 0.16's class names (`sizing reset-sizeN`), but KaTeX 0.18 renamed them (`katex-sizing`/`fontsize-ensurer`). If the imported CSS is newer than the renderer, superscripts/subscripts render full-size. Only upgrade together with rehype-katex.
 - Not built yet, on the roadmap: a `/toolkit` section (interactive tools). One repo, route-based sections — the user chose this over splitting repos.
 
 ## Astro docs
