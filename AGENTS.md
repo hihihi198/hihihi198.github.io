@@ -73,7 +73,7 @@ Keep these stable; renaming means editing markup too.
 
 `src/content/articles/*.md`; collection defined in `src/content.config.ts`.
 
-Posting flow: `npm run new` (scaffolds the file — slug, UTC+8 date, frontmatter) → write the body → `npm run ship` (builds, commits **only** `src/content/articles/`, pushes). Scripts live in `scripts/`.
+Posting flow: copy `src/content/articles/template.md` (stays `draft: true`, so it never renders) to a new slug → write → `npm run build` → commit + push.
 
 ```md
 ---
@@ -153,7 +153,7 @@ When starting the dev server, prefer background mode: `astro dev --background`, 
 - `.claude/` is gitignored. Never commit secrets; tokens live in `~/.cloudflare-api-token`, `~/.diary-post-token` (chmod 600).
 - Old commits contain a harmless `.claude/settings.local.json`; the user **declined** scrubbing git history. Don't re-propose it.
 - Astro's `is:global` blocks don't support `:global()` — use plain selectors there (lightningcss warns and drops the rule).
-- Dates are **calendar days, not instants** — formatted with `timeZone: 'UTC'` so they never shift. The project default timezone is **UTC+8**: `npm run new` stamps articles with the UTC+8 day. The diary Worker still defaults entry dates to the UTC day (change there means a worker edit + redeploy).
+- Dates are **calendar days, not instants** — formatted with `timeZone: 'UTC'` so they never shift. The project default timezone is **UTC+8**: set article `date` to the UTC+8 calendar day. The diary Worker still defaults entry dates to the UTC day (change there means a worker edit + redeploy).
 - Fonts are self-hosted in `public/fonts/` (Newsreader variable serif + IBM Plex Mono, both OFL) and declared in `fonts.css`; `Layout.astro` preloads the text serif. Keep the Georgia/Menlo fallback stacks in `tokens.css` intact.
 - `base.css` has `[hidden] { display: none !important }` — the diary toggles sections with the `hidden` attribute, and author `display` rules would otherwise beat the UA rule and show them on load.
 - Not built yet, on the roadmap: a `/toolkit` section (interactive tools). One repo, route-based sections — the user chose this over splitting repos.

@@ -9,37 +9,34 @@ A personal site at **https://hihihi198.github.io** — a static **blog** plus a 
 ## Posting an article
 
 ```sh
-npm run new     # prompts for title/summary/tags, writes src/content/articles/<slug>.md
-#   ...write the body...
-npm run ship    # builds, commits the article, pushes — the site redeploys in ~a minute
+# 1. copy the template — the filename becomes the URL (/articles/<slug>/)
+cp src/content/articles/template.md src/content/articles/<slug>.md
+
+# 2. write the article: set title and date (UTC+8 day), optional summary/tags,
+#    and draft: false when ready to publish
+
+# 3. build to catch content errors
+npm run build
+
+# 4. commit & push — Actions redeploys in about a minute
+git add src/content/articles/<slug>.md
+git commit -m "Add article: <title>"
+git push
 ```
 
-- Slug and date (UTC+8) are generated; the filename becomes the URL (`/articles/<slug>/`).
-- Optional frontmatter: `summary` (shown on cards), `tags` (drives `/tags/`), `draft: true` (hides it everywhere).
-- Bodies get syntax highlighting and KaTeX math (`$inline$`, `$$display$$`).
-- `npm run ship` commits **only** `src/content/articles/` — other working-tree changes stay uncommitted.
-
-### Manually, from the terminal
-
-If you'd rather skip the scripts:
-
-1. Create `src/content/articles/<slug>.md` yourself — the filename becomes the URL:
-
-   ```md
-   ---
-   title: My post          # required
-   date: 2026-07-21        # required, UTC+8 calendar day
-   summary: One line.      # optional — shown on cards
-   tags: [essay, note]     # optional — drives /tags/
-   draft: false            # optional — true hides it from list/tags/routes
-   ---
-
-   Body in Markdown (code highlighting and KaTeX math included).
-   ```
-
-2. `npm run build` to catch content errors, then commit and push to `main` — same deploy as `npm run ship`.
+The template (`src/content/articles/template.md`) stays `draft: true`, so it never appears on the site — flip it to `false` when publishing. Bodies get syntax highlighting and KaTeX math (`$inline$`, `$$display$$`).
 
 (Diary entries don't touch git at all — they're posted from `/diary/` or the Worker API.)
+
+## Finding an article
+
+Articles are plain Markdown files in `src/content/articles/`, so `rg` is enough:
+
+```sh
+rg --files src/content/articles            # list all article files
+rg 'keyword' src/content/articles          # search titles, frontmatter, and bodies
+rg -l 'title: Hello' src/content/articles   # just the matching file path(s)
+```
 
 ## Commands
 
@@ -52,4 +49,4 @@ If you'd rather skip the scripts:
 ## Documentation
 
 - `AGENTS.md` — the real docs: architecture, the styling system, content formats, the diary Worker API, and deploy workflows.
-- `docs/openclaw.md` — posting diary entries programmatically (post token).
+  - `docs/openclaw.md` — posting diary entries programmatically (post token).
