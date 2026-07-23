@@ -19,7 +19,7 @@
   --color-ok: #047857;
 
   /* Typography */
-  --font-body: 'Newsreader', Georgia, 'Times New Roman', serif;
+  --font-body: 'Newsreader', Georgia, 'Times New Roman', 'Songti SC', 'Hiragino Mincho ProN', 'Noto Serif CJK SC', 'Source Han Serif SC', serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
   /* Layout */
