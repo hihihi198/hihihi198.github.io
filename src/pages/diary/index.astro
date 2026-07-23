@@ -27,6 +27,14 @@ const API_BASE = 'https://diary.hihihi198.workers.dev';
       <input id="c-tags" type="text">
     </label>
     <label class="field">
+      <span>Language</span>
+      <select id="c-lang">
+        <option value="en" selected>English / default</option>
+        <option value="ja">Japanese</option>
+        <option value="zh">Chinese</option>
+      </select>
+    </label>
+    <label class="field">
       <span>Entry <em>(Markdown)</em></span>
       <textarea id="c-body"></textarea>
     </label>
@@ -54,6 +62,7 @@ const API_BASE = 'https://diary.hihihi198.workers.dev';
     const cTitle = document.getElementById('composer-title');
     const cDate = document.getElementById('c-date') as HTMLInputElement | null;
     const cTags = document.getElementById('c-tags') as HTMLInputElement | null;
+    const cLang = document.getElementById('c-lang') as HTMLSelectElement | null;
     const cBody = document.getElementById('c-body') as HTMLTextAreaElement | null;
     const cSave = document.getElementById('c-save') as HTMLButtonElement | null;
     const cCancel = document.getElementById('c-cancel');
@@ -129,6 +138,7 @@ const API_BASE = 'https://diary.hihihi198.workers.dev';
       if (cCancel) cCancel.hidden = true;
       if (cBody) cBody.value = '';
       if (cTags) cTags.value = '';
+      if (cLang) cLang.value = 'en';
       if (cDate) cDate.value = todayStr();
       setCMsg('');
     }
@@ -140,6 +150,7 @@ const API_BASE = 'https://diary.hihihi198.workers.dev';
         date: cDate?.value || todayStr(),
         body,
         tags: parseTags(cTags?.value || ''),
+        lang: cLang?.value || 'en',
       });
       const url = editingId ? `${API}/api/entries/${encodeURIComponent(editingId)}` : `${API}/api/entries`;
       const method = editingId ? 'PUT' : 'POST';
@@ -170,6 +181,7 @@ const API_BASE = 'https://diary.hihihi198.workers.dev';
         if (cCancel) cCancel.hidden = false;
         if (cDate) cDate.value = full.date.slice(0, 10);
         if (cTags) cTags.value = (full.tags || []).join(', ');
+        if (cLang) cLang.value = full.lang || 'en';
         if (cBody) cBody.value = full.body;
         setCMsg('Editing entry.', '');
         composer?.scrollIntoView({ behavior: 'smooth' });
@@ -250,6 +262,7 @@ const API_BASE = 'https://diary.hihihi198.workers.dev';
       const art = document.createElement('article');
       art.className = 'entry';
       art.id = 'entry-' + e.id;
+      art.lang = e.lang || 'en';
 
       const node = document.createElement('span');
       node.className = 'node';

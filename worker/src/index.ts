@@ -12,6 +12,7 @@ interface Entry {
   body: string; // markdown source
   bodyHtml: string;
   tags: string[];
+  lang: string; // en | ja | zh
   createdAt: string; // ISO
   updatedAt?: string; // ISO
 }
@@ -55,8 +56,11 @@ async function canPost(request: Request, env: Env): Promise<boolean> {
   return verify(request.headers.get('x-post-token') ?? '', env.POST_TOKEN);
 }
 
+const LANGS = ['en', 'ja', 'zh'] as const;
+type Lang = (typeof LANGS)[number];
+
 type Parsed =
-  | { ok: true; text: string; date: Date; tags: string[] }
+  | { ok: true; text: string; date: Date; tags: string[]; lang: Lang }
   | { ok: false; error: string };
 
 function parseEntryInput(payload: any): Parsed {
@@ -68,7 +72,8 @@ function parseEntryInput(payload: any): Parsed {
   const tags = Array.isArray(payload?.tags)
     ? payload.tags.filter((t: unknown): t is string => typeof t === 'string')
     : [];
-  return { ok: true, text, date, tags };
+  const lang = LANGS.includes(payload?.lang) ? payload.lang : 'en';
+  return { ok: true, text, date, tags, lang };
 }
 
 // Date-based id; append -2, -3, … on collision so multiple same-day posts work.
@@ -102,10 +107,10 @@ async function listEntries(env: Env): Promise<Entry[]> {
 }
 
 function publicView(e: Entry) {
-  return { id: e.id, date: e.date, bodyHtml: e.bodyHtml, tags: e.tags };
+  return { id: e.id, date: e.date, bodyHtml: e.bodyHtml, tags: e.tags, lang: e.lang };
 }
 function fullView(e: Entry) {
-  return { id: e.id, date: e.date, body: e.body, bodyHtml: e.bodyHtml, tags: e.tags };
+  return { id: e.id, date: e.date, body: e.body, bodyHtml: e.bodyHtml, tags: e.tags, lang: e.lang };
 }
 
 const ADMIN_HTML = `<!doctype html>
@@ -147,6 +152,12 @@ const ADMIN_HTML = `<!doctype html>
   <input id="date" type="date" required>
   <label for="tags">Tags (comma-separated, optional)</label>
   <input id="tags" type="text" placeholder="note, idea">
+  <label for="lang">Language</label>
+  <select id="lang">
+    <option value="en" selected>English / default</option>
+    <option value="ja">Japanese</option>
+    <option value="zh">Chinese</option>
+  </select>
   <label for="body">Entry (Markdown)</label>
   <textarea id="body" required></textarea>
   <label for="pw">Password</label>
@@ -171,6 +182,7 @@ const ADMIN_HTML = `<!doctype html>
   var listEl = document.getElementById('list');
   var dateEl = document.getElementById('date');
   var tagsEl = document.getElementById('tags');
+  var langEl = document.getElementById('lang');
   var bodyEl = document.getElementById('body');
   var editingId = null;
 
@@ -224,6 +236,7 @@ const ADMIN_HTML = `<!doctype html>
       editingId = id;
       dateEl.value = e.date.slice(0, 10);
       tagsEl.value = (e.tags || []).join(', ');
+      langEl.value = e.lang || 'en';
       bodyEl.value = e.body;
       titleEl.textContent = 'Edit entry';
       saveBtn.textContent = 'Update';
@@ -242,6 +255,7 @@ const ADMIN_HTML = `<!doctype html>
     cancelBtn.hidden = true;
     bodyEl.value = '';
     tagsEl.value = '';
+    langEl.value = 'en';
     dateEl.value = new Date().toISOString().slice(0, 10);
   }
   cancelBtn.addEventListener('click', function () { resetForm(); setMsg(''); });
@@ -256,7 +270,8 @@ const ADMIN_HTML = `<!doctype html>
     var payload = JSON.stringify({
       date: dateEl.value,
       body: text,
-      tags: tagsEl.value.split(',').map(function (s) { return s.trim(); }).filter(Boolean)
+      tags: tagsEl.value.split(',').map(function (s) { return s.trim(); }).filter(Boolean),
+      lang: langEl.value || 'en'
     });
     var url = '/api/entries' + (editingId ? '/' + encodeURIComponent(editingId) : '');
     var method = editingId ? 'PUT' : 'POST';
@@ -341,6 +356,7 @@ export default {
             body: parsed.text,
             bodyHtml: String(marked.parse(parsed.text)),
             tags: parsed.tags,
+            lang: parsed.lang,
             createdAt: now,
             updatedAt: now,
           };
@@ -381,6 +397,7 @@ export default {
             body: parsed.text,
             bodyHtml: String(marked.parse(parsed.text)),
             tags: parsed.tags,
+            lang: parsed.lang,
             updatedAt: new Date().toISOString(),
           };
           await env.DIARY.put(key, JSON.stringify(updated));

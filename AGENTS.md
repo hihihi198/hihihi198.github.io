@@ -111,7 +111,7 @@ Live at `https://diary.hihihi198.workers.dev`. Source: `worker/src/index.ts` (si
 - Auth headers: `x-admin-password`, or `x-post-token` (**POST-only**, for external agents — see `docs/openclaw.md`).
 - Secrets (Cloudflare, never in git): `ADMIN_PASSWORD`, `POST_TOKEN`.
 - **CORS is locked to `https://hihihi198.github.io`** and allows `GET/POST/PUT/DELETE/OPTIONS` plus those headers. **Adding a route or header means updating the CORS block**, or the browser calls fail.
-- Entry shape in KV (`entry:<id>`): `{ id, date, body, bodyHtml, tags, createdAt, updatedAt }`. `id` is `YYYY-MM-DD`, with `-2`, `-3`… appended for same-day collisions.
+- Entry shape in KV (`entry:<id>`): `{ id, date, body, bodyHtml, tags, lang, createdAt, updatedAt }`. `lang` is `en | ja | zh` and drives the `:lang()` font stack on the rendered entry. `id` is `YYYY-MM-DD`, with `-2`, `-3`… appended for same-day collisions.
 
 Deploy the worker (site deploy does **not** cover it):
 
