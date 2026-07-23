@@ -2,7 +2,7 @@
 title: Japanese Rendering Test
 date: 2026-07-23
 tags: [test, japanese]
-draft: true
+draft: false
 lang: ja
 ---
 

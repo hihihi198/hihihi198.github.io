@@ -1,6 +1,7 @@
-/* Self-hosted fonts (public/fonts/). Both are OFL-licensed.
+/* Self-hosted fonts (public/fonts/). All are OFL-licensed.
    Newsreader: variable serif (opsz + wght axes), latin subset.
-   IBM Plex Mono: code, two static weights. */
+   IBM Plex Mono: code, two static weights.
+   Noto Serif CJK JP: Japanese subset, two static weights. */
 
 @font-face {
   font-family: 'Newsreader';
@@ -29,4 +30,18 @@
   font-weight: 500;
   font-display: swap;
   src: url('/fonts/ibm-plex-mono-medium.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Noto Serif CJK JP';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/noto-serif-cjk-jp-regular.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Noto Serif CJK JP';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/noto-serif-cjk-jp-bold.woff2') format('woff2');
 }

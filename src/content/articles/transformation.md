@@ -42,7 +42,7 @@ $$
 
 ## Basic Transformations
 
-- <ruby>仿射<rt>Affine</rt></ruby>
+- 仿射（Affine）
   - Scale
     - Uniform: $sI$
     - Non-uniform: $\begin{bmatrix} s_x & 0\\ 0 & s_y \end{bmatrix}$
@@ -71,7 +71,7 @@ $$
 - 2D Homogeneous coordinates
   - point: $(x,y,1)^T$
   - vector: $(x,y,0)^T$
-- <ruby>平移<rt>Translation</rt></ruby>
+- 平移（Translation）
   - $\begin{bmatrix}
      1&0&t_x\\
      0&1&t_y\\
@@ -152,4 +152,4 @@ n&0&0&0\\
 $$
 但是实际上作业中相机是朝着 $-z$ 看的，传递的参数 `zNear` 和 `zFar` 又是正数（代表距离而不是坐标），所以作业里的矩阵在 $n,f$ 前面加上了负号。并且为了保证深度正确（离相机远的点深度大），在 `ortho_scale` 一步加入了翻转操作，让 $z$ 变成了正数。
 
-现在所有的点都被放入 $[-1,1]^3$ 的视口中了，接下来把变换后的顶点组装成三角形，就可以开始 <ruby>光栅化<rt>Rasterization</rt></ruby>了。![image-20260723143910109](./image-20260723143910109.png)
+现在所有的点都被放入 $[-1,1]^3$ 的视口中了，接下来把变换后的顶点组装成三角形，就可以开始光栅化（Rasterization）了。![image-20260723143910109](./image-20260723143910109.png)

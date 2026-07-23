@@ -34,7 +34,7 @@
 }
 
 :lang(ja) {
-  --font-body: 'Newsreader', Georgia, 'Times New Roman', 'Hiragino Mincho ProN', 'Noto Serif CJK JP', 'Yu Mincho', 'MS Mincho', serif;
+  --font-body: 'Newsreader', 'Noto Serif CJK JP', Georgia, 'Times New Roman', 'Hiragino Mincho ProN', 'Yu Mincho', 'MS Mincho', serif;
 }
 
 :lang(zh) {
