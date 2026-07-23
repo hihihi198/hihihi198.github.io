@@ -24,7 +24,7 @@ const date = post.data.date.toLocaleDateString('en-US', {
 });
 ---
 <Layout title={`${post.data.title} · hihihi198`}>
-  <article class="post">
+  <article class="post" lang={post.data.lang}>
     <header class="post__header">
       <h1 class="post__title">{post.data.title}</h1>
       <div class="post__meta">

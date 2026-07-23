@@ -33,6 +33,14 @@
   --radius-pill: 999px;
 }
 
+:lang(ja) {
+  --font-body: 'Newsreader', Georgia, 'Times New Roman', 'Hiragino Mincho ProN', 'Noto Serif CJK JP', 'Yu Mincho', 'MS Mincho', serif;
+}
+
+:lang(zh) {
+  --font-body: 'Newsreader', Georgia, 'Times New Roman', 'Songti SC', 'Noto Serif CJK SC', 'Source Han Serif SC', serif;
+}
+
 :root[data-theme='dark'] {
   --color-bg: #16130f;
   --color-text: #e9e2d4;
