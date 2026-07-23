@@ -21,6 +21,10 @@ body {
   transition: background 0.2s ease, color 0.2s ease;
 }
 
+[lang='ja'] {
+  font-family: var(--font-body);
+}
+
 ::selection {
   background: color-mix(in srgb, var(--color-accent) 28%, transparent);
 }
