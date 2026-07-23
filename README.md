@@ -26,6 +26,16 @@ git push
 
 The template (`src/content/articles/template.md`) stays `draft: true`, so it never appears on the site — flip it to `false` when publishing. Bodies get syntax highlighting and KaTeX math (`$inline$`, `$$display$$`).
 
+### Images
+
+Put the image file next to the article in `src/content/articles/` and reference it with a relative path — the build optimizes it (hashed WebP) and ships it automatically:
+
+```md
+![alt text](./my-diagram.png)
+```
+
+Absolute paths like `/Users/...` (e.g. pasted from Typora) won't work — they only exist on your machine.
+
 (Diary entries don't touch git at all — they're posted from `/diary/` or the Worker API.)
 
 ## Finding an article

@@ -88,6 +88,7 @@ Body in Markdown.
 
 Slug = filename. Queries filter drafts with `getCollection('articles', ({ data }) => !data.draft)`.
 Math works in bodies: `$e^{i\pi}$` inline, `$$...$$` display (rendered by KaTeX at build time).
+Images: co-locate the file next to the `.md` and reference it relatively (`![alt](./pic.png)`) — the build emits an optimized hashed WebP under `dist/_astro/`. Absolute local paths (Typora-style `/Users/...`) 404 on the site.
 
 ### Diary (dynamic, KV)
 
