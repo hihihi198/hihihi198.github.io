@@ -481,7 +481,8 @@
   opacity: 0.8;
 }
 .composer .field input,
-.composer .field textarea {
+.composer .field textarea,
+.composer .field select {
   width: 100%;
   font: inherit;
   padding: 0.5rem;
@@ -490,6 +491,23 @@
   background: var(--color-bg);
   color: var(--color-text);
   box-sizing: border-box;
+}
+.composer .field select {
+  appearance: none;
+  padding-right: 1.8rem;
+}
+.select-wrap {
+  position: relative;
+}
+.select-wrap::after {
+  content: '';
+  position: absolute;
+  right: 0.75rem;
+  bottom: 0.85rem;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 6px solid var(--color-muted);
+  pointer-events: none;
 }
 .composer .field textarea {
   min-height: 120px;
