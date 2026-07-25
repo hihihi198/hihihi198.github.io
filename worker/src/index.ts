@@ -12,7 +12,7 @@ interface Entry {
   body: string; // markdown source
   bodyHtml: string;
   tags: string[];
-  lang: string; // en | ja | zh
+  lang: string; // en | ja — 'en' is the default stack, which also covers Chinese
   createdAt: string; // ISO
   updatedAt?: string; // ISO
 }
@@ -56,7 +56,7 @@ async function canPost(request: Request, env: Env): Promise<boolean> {
   return verify(request.headers.get('x-post-token') ?? '', env.POST_TOKEN);
 }
 
-const LANGS = ['en', 'ja', 'zh'] as const;
+const LANGS = ['en', 'ja'] as const;
 type Lang = (typeof LANGS)[number];
 
 type Parsed =
@@ -106,11 +106,17 @@ async function listEntries(env: Env): Promise<Entry[]> {
   return entries;
 }
 
+// Older entries in KV predate the current choices — some carry the retired 'zh',
+// some no lang at all. Normalize on read so the API only ever emits en | ja.
+function viewLang(lang: string | undefined) {
+  return lang === 'ja' ? 'ja' : 'en';
+}
+
 function publicView(e: Entry) {
-  return { id: e.id, date: e.date, bodyHtml: e.bodyHtml, tags: e.tags, lang: e.lang };
+  return { id: e.id, date: e.date, bodyHtml: e.bodyHtml, tags: e.tags, lang: viewLang(e.lang) };
 }
 function fullView(e: Entry) {
-  return { id: e.id, date: e.date, body: e.body, bodyHtml: e.bodyHtml, tags: e.tags, lang: e.lang };
+  return { id: e.id, date: e.date, body: e.body, bodyHtml: e.bodyHtml, tags: e.tags, lang: viewLang(e.lang) };
 }
 
 const ADMIN_HTML = `<!doctype html>
@@ -154,9 +160,8 @@ const ADMIN_HTML = `<!doctype html>
   <input id="tags" type="text" placeholder="note, idea">
   <label for="lang">Language</label>
   <select id="lang">
-    <option value="en" selected>English / default</option>
+    <option value="en" selected>Default</option>
     <option value="ja">Japanese</option>
-    <option value="zh">Chinese</option>
   </select>
   <label for="body">Entry (Markdown)</label>
   <textarea id="body" required></textarea>

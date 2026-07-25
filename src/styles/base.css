@@ -21,7 +21,10 @@ body {
   transition: background 0.2s ease, color 0.2s ease;
 }
 
-[lang='ja'] {
+/* `:lang(ja)` in tokens.css redefines --font-body, but descendants inherit the
+   font list `body` already computed — re-declaring font-family here is what
+   actually applies it. Chinese has no counterpart: it uses the default stack. */
+:lang(ja) {
   font-family: var(--font-body);
 }
 

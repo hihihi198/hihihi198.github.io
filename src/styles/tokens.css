@@ -19,7 +19,7 @@
   --color-ok: #047857;
 
   /* Typography */
-  --font-body: 'Newsreader', Georgia, 'Times New Roman', 'Songti SC', 'Hiragino Mincho ProN', 'Noto Serif CJK SC', 'Source Han Serif SC', serif;
+  --font-body: 'Newsreader', Georgia, 'Times New Roman', 'Songti SC', 'Noto Serif CJK SC', 'Source Han Serif SC', 'PingFang SC', serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
   /* Layout */
@@ -33,12 +33,15 @@
   --radius-pill: 999px;
 }
 
+/* Language and Han unification. There are exactly two stacks: the default above
+   (latin + Chinese glyph forms) and the Japanese one below. Never put a Japanese
+   face in the default stack — `Songti SC` is macOS-only, so on iOS the Chinese
+   text falls straight through to whatever comes next, and a Mincho there renders
+   Chinese with Japanese kanji forms. `PingFang SC` closes the default stack for
+   that reason: it is the one Chinese family iOS actually ships.
+   `:lang(ja)` leads with the self-hosted webfont, so Japanese is right everywhere. */
 :lang(ja) {
   --font-body: 'Newsreader', 'Noto Serif CJK JP', Georgia, 'Times New Roman', 'Hiragino Mincho ProN', 'Yu Mincho', 'MS Mincho', serif;
-}
-
-:lang(zh) {
-  --font-body: 'Newsreader', Georgia, 'Times New Roman', 'Songti SC', 'Noto Serif CJK SC', 'Source Han Serif SC', serif;
 }
 
 :root[data-theme='dark'] {
