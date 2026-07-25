@@ -19,7 +19,7 @@
   --color-ok: #047857;
 
   /* Typography */
-  --font-body: 'Newsreader', Georgia, 'Times New Roman', 'Songti SC', 'Noto Serif CJK SC', 'Source Han Serif SC', 'PingFang SC', serif;
+  --font-body: 'Newsreader', Georgia, 'Times New Roman', sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
   /* Layout */
@@ -33,13 +33,21 @@
   --radius-pill: 999px;
 }
 
-/* Language and Han unification. There are exactly two stacks: the default above
-   (latin + Chinese glyph forms) and the Japanese one below. Never put a Japanese
-   face in the default stack — `Songti SC` is macOS-only, so on iOS the Chinese
-   text falls straight through to whatever comes next, and a Mincho there renders
-   Chinese with Japanese kanji forms. `PingFang SC` closes the default stack for
-   that reason: it is the one Chinese family iOS actually ships.
-   `:lang(ja)` leads with the self-hosted webfont, so Japanese is right everywhere. */
+/* Language and Han unification. The default stack above names latin faces only:
+   Newsreader serves English, and CJK falls through to the generic so the OS
+   cascade picks by the reader's language preferences. Two rules keep that working.
+
+   Never name a CJK family there. An explicit family beats the cascade, which is
+   how `Hiragino Mincho ProN` — sitting in that stack behind macOS-only `Songti SC`
+   — ended up rendering Chinese with Japanese kanji forms on iOS.
+
+   And keep the generic `sans-serif`. Only CJK glyphs ever reach it, so it decides
+   which cascade Han falls into; iOS's *serif* cascade has exactly one CJK member,
+   Hiragino Mincho, so `serif` would reintroduce that same bug. Chinese is sans by
+   design here — English is unaffected, Newsreader matches first.
+
+   `:lang(ja)` is the sole exception: it leads with the self-hosted webfont, which
+   pins Japanese on every device. */
 :lang(ja) {
   --font-body: 'Newsreader', 'Noto Serif CJK JP', Georgia, 'Times New Roman', 'Hiragino Mincho ProN', 'Yu Mincho', 'MS Mincho', serif;
 }
