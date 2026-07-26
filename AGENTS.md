@@ -67,6 +67,19 @@ Keep these stable; renaming means editing markup too.
 
 **Dark is the home theme.** `Layout.astro` sets `data-theme="light|dark"` on `<html>` **before paint** (inline script, avoids a flash): `localStorage.theme` wins, otherwise **dark** — the OS preference is deliberately not consulted. A header button toggles it. Dark values live in `:root[data-theme='dark']` in `tokens.css` — **add new colors there too**, or dark mode breaks.
 
+### Language & fonts
+
+Content is tagged **`en | ja`** — article frontmatter `lang:`, diary entry `lang`. There are only two: **Default** (English *and* Chinese) and **Japanese**. There is deliberately no `zh`; a retired one was removed. Adding a language means touching all four producers: `src/content.config.ts`, the diary composer `<select>`, the worker's `LANGS`, and the admin page `<select>` inlined in the worker.
+
+Exactly two font stacks in `tokens.css`, and the rules below are **load-bearing — Chinese renders as Japanese if you break them**:
+
+- **Default `--font-body` names latin faces only** and ends in **`sans-serif`**. Latin is fully covered by Newsreader/Georgia/Times, so CJK glyphs are the only ones that ever reach the trailing generic — which makes it the choice of *which system cascade Han falls into*. iOS's serif cascade holds exactly one CJK face, Hiragino Mincho (Japanese), so `serif` there renders Chinese with Japanese kanji forms. Chinese is sans by design; English is unaffected.
+- **Never name a CJK family in the default stack.** An explicit family beats the OS's language-aware cascade. The original bug was `'Hiragino Mincho ProN'` sitting behind macOS-only `'Songti SC'`: fine on a Mac, Japanese-looking Chinese on an iPhone.
+- **`:lang(ja)` is the sole exception** — it leads with the self-hosted `Noto Serif CJK JP`, pinning Japanese on every device.
+- **`base.css` re-declares `font-family` under `:lang(ja)`.** Redefining `--font-body` on a descendant does nothing on its own: descendants inherit the font list `body` already computed. Without that re-declaration the `:lang(ja)` block is dead code. This has bitten before (commit `563381f`).
+
+Rendering can't be checked from the terminal, and macOS masks the iOS failure — **ask the user to verify font changes on both a Mac and an iPhone**.
+
 ## Content
 
 ### Articles (static, git)
@@ -82,6 +95,7 @@ summary: One line.      # optional — shown on cards
 date: 2026-07-05        # required
 tags: [essay, note]     # optional, drives /tags/
 draft: false            # optional; true hides it from list/tags/routes
+lang: en                # optional, en | ja — defaults to en; see "Language & fonts"
 ---
 Body in Markdown.
 ```
@@ -111,7 +125,7 @@ Live at `https://diary.hihihi198.workers.dev`. Source: `worker/src/index.ts` (si
 - Auth headers: `x-admin-password`, or `x-post-token` (**POST-only**, for external agents — see `docs/openclaw.md`).
 - Secrets (Cloudflare, never in git): `ADMIN_PASSWORD`, `POST_TOKEN`.
 - **CORS is locked to `https://hihihi198.github.io`** and allows `GET/POST/PUT/DELETE/OPTIONS` plus those headers. **Adding a route or header means updating the CORS block**, or the browser calls fail.
-- Entry shape in KV (`entry:<id>`): `{ id, date, body, bodyHtml, tags, lang, createdAt, updatedAt }`. `lang` is `en | ja | zh` and drives the `:lang()` font stack on the rendered entry. `id` is `YYYY-MM-DD`, with `-2`, `-3`… appended for same-day collisions.
+- Entry shape in KV (`entry:<id>`): `{ id, date, body, bodyHtml, tags, lang, createdAt, updatedAt }`. `lang` is `en | ja` and drives the `:lang()` font stack on the rendered entry (see "Language & fonts"); `publicView`/`fullView` normalize legacy values on read, so the API never emits the retired `zh` or a missing `lang`. `id` is `YYYY-MM-DD`, with `-2`, `-3`… appended for same-day collisions.
 
 Deploy the worker (site deploy does **not** cover it):
 
@@ -155,7 +169,7 @@ When starting the dev server, prefer background mode: `astro dev --background`, 
 - Old commits contain a harmless `.claude/settings.local.json`; the user **declined** scrubbing git history. Don't re-propose it.
 - Astro's `is:global` blocks don't support `:global()` — use plain selectors there (lightningcss warns and drops the rule).
 - Dates are **calendar days, not instants** — formatted with `timeZone: 'UTC'` so they never shift. The project default timezone is **UTC+8**: set article `date` to the UTC+8 calendar day. The diary Worker still defaults entry dates to the UTC day (change there means a worker edit + redeploy).
-- Fonts are self-hosted in `public/fonts/` (Newsreader variable serif + IBM Plex Mono, both OFL) and declared in `fonts.css`; `Layout.astro` preloads the text serif. Keep the Georgia/Menlo fallback stacks in `tokens.css` intact.
+- Fonts are self-hosted in `public/fonts/` (Newsreader variable serif, IBM Plex Mono, Noto Serif CJK JP — all OFL) and declared in `fonts.css`; `Layout.astro` preloads the text serif only. Keep the Georgia/Menlo fallback stacks in `tokens.css` intact, and read "Language & fonts" before touching `--font-body`.
 - `base.css` has `[hidden] { display: none !important }` — the diary toggles sections with the `hidden` attribute, and author `display` rules would otherwise beat the UA rule and show them on load.
 - **Keep `katex` pinned to `^0.16`.** rehype-katex renders with 0.16's class names (`sizing reset-sizeN`), but KaTeX 0.18 renamed them (`katex-sizing`/`fontsize-ensurer`). If the imported CSS is newer than the renderer, superscripts/subscripts render full-size. Only upgrade together with rehype-katex.
 - Not built yet, on the roadmap: a `/toolkit` section (interactive tools). One repo, route-based sections — the user chose this over splitting repos.
