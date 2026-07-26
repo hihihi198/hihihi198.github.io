@@ -4,7 +4,7 @@ A personal site at **https://hihihi198.github.io** — a static **blog** plus a 
 
 - **Blog** — Markdown articles in `src/content/articles/`, built at deploy time by **Astro 7** (static output, no UI/CSS framework). Publish by pushing to `main`; GitHub Actions rebuilds and deploys to Pages. Bodies support KaTeX math (`$inline$`, `$$display$$`).
 - **Diary** — entries live in **Cloudflare KV** and are served by a **Worker** (`worker/`); the `/diary/` page fetches them client-side, so posting from the UI is instant — no rebuild. The Worker deploys separately (see `AGENTS.md`).
-- **Styling** — a swappable layer: `fonts.css` → `tokens.css` → `base.css` → `components.css` under `src/styles/`, with semantic class names as the stable contract. Current theme: dark-first editorial, self-hosted Newsreader + IBM Plex Mono (`public/fonts/`).
+- **Styling** — a swappable layer: `fonts.css` → `tokens.css` → `base.css` → `components.css` under `src/styles/`, with semantic class names as the stable contract. Current theme: dark-first editorial, self-hosted Newsreader + IBM Plex Mono + Noto Serif CJK JP (`public/fonts/`).
 
 ## Posting an article
 
@@ -13,7 +13,8 @@ A personal site at **https://hihihi198.github.io** — a static **blog** plus a 
 cp src/content/articles/template.md src/content/articles/<slug>.md
 
 # 2. write the article: set title and date (UTC+8 day), optional summary/tags,
-#    and draft: false when ready to publish
+#    and draft: false when ready to publish. Add lang: ja for a Japanese post —
+#    English and Chinese both use the default, so they need nothing.
 
 # 3. build to catch content errors
 npm run build
