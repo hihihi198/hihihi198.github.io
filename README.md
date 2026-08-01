@@ -37,6 +37,32 @@ Put the image file next to the article in `src/content/articles/` and reference 
 
 Absolute paths like `/Users/...` (e.g. pasted from Typora) won't work — they only exist on your machine.
 
+### Japanese inside a Chinese (or English) post
+
+Frontmatter `lang:` sets the language of the whole article, but a passage can override it with a plain `lang` attribute — write the HTML inline in the Markdown:
+
+```md
+---
+lang: en          # leave it here: "default" covers English *and* Chinese
+---
+
+中文段落，夹一句日文：<span lang="ja">骨折した右手の骨格を調べた。</span>继续中文。
+
+<div lang="ja">
+
+真面目な人に直接、具体的な話をした。
+
+</div>
+
+回到中文。
+```
+
+- **Keep the blank lines inside `<div>`.** With them the content is still parsed as Markdown (emphasis, links, math); without them it's dumped as literal HTML.
+- **Don't set `lang: ja` on a mostly-Chinese post.** That applies the Japanese webfont to the whole article, so the Chinese renders with Japanese kanji forms — the reverse of the intent.
+- Anything marked `lang="ja"` pulls in the ~250 KB Noto Serif CJK JP webfont; pages without it never load it.
+
+This works because the `:lang(ja)` rules in `tokens.css`/`base.css` match *any* element, not just the article wrapper. Same trick works in diary entries. See "Language & fonts" in `AGENTS.md` for why the stacks are built this way — and check the result on both a Mac and an iPhone, since macOS hides the iOS failure mode.
+
 (Diary entries don't touch git at all — they're posted from `/diary/` or the Worker API.)
 
 ## Finding an article
