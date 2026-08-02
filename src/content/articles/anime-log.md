@@ -51,7 +51,7 @@ draft: false
 | Chinese Name | Title | Romanji | English Name | Notes |
 |---|---|---|---|---|
 | 团子大家族 | <span lang="ja">CLANNAD -クラナド-</span> | Kuranado | CLANNAD | 神作 |
-| 团子大家族 第二季 | <span lang="ja">CLANNAD ～AFTER STORY～</span> | Kuranado ~AFTER STORY~ | CLANNAD ~After Story~ | |
+| 团子大家族 第二季 | <span lang="ja">CLANNAD ～AFTER STORY～</span> | | CLANNAD ~After Story~ | |
 | 孤独摇滚！ | <span lang="ja">ぼっち・ざ・ろっく！</span> | Bocchi za Rokku! | Bocchi the Rock! | |
 | 金牌得主 | <span lang="ja">メダリスト</span> | Medarisuto | Medalist | |
 
@@ -62,9 +62,9 @@ draft: false
 | 钢之炼金术师 2009版 | <span lang="ja">鋼の錬金術師 FULLMETAL ALCHEMIST</span> | Hagane no Renkinjutsushi FULLMETAL ALCHEMIST | Fullmetal Alchemist: Brotherhood | |
 | 轻音少女 | <span lang="ja">けいおん!</span> | Keion! | K-On! | <span lang="ja">萌え萌え</span> |
 | 轻音少女!! | <span lang="ja">けいおん!!</span> | Keion!! | K-On!! | |
-| 石纪元 | <span lang="ja">Dr.STONE</span> | Dokutā Sutōn | Dr. Stone | 好吵。。。 |
-| 石纪元 第二季 | <span lang="ja">Dr.STONE STONE WARS</span> | Dokutā Sutōn STONE WARS | Dr. Stone: Stone Wars | |
-| 石纪元 第三季 | <span lang="ja">Dr.STONE NEW WORLD</span> | Dokutā Sutōn NEW WORLD | Dr. Stone: New World | |
+| 石纪元 | <span lang="ja">Dr.STONE</span> | | Dr. Stone | 好吵。。。 |
+| 石纪元 第二季 | <span lang="ja">Dr.STONE STONE WARS</span> | | Dr. Stone: Stone Wars | |
+| 石纪元 第三季 | <span lang="ja">Dr.STONE NEW WORLD</span> | | Dr. Stone: New World | |
 | 轻音少女剧场版 | <span lang="ja">映画 けいおん!</span> | Eiga Keion! | K-On! The Movie | |
 
 然后！我在八月开始玩！原！神！差不多整整一年基本没看日漫了。当然也有看，可能是我不记得了。完整看完的只有<span lang="ja">『涼宮ハルヒの消失』</span>。然而按照剧情其实应该先看 TV 版，我没有看 TV 就看剧场版了，而且到现在都没看 TV 版QAQ。所以应该不算真的「看完」，就不放进表格里了。
