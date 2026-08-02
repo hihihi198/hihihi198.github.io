@@ -1,6 +1,7 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
 import { unified } from '@astrojs/markdown-remark';
+import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 
@@ -13,7 +14,11 @@ export default defineConfig({
     // Sätteri, because KaTeX math support is remark-math + rehype-katex.
     // $...$ inline and $$...$$ display math → KaTeX (CSS imported by articles/[slug].astro)
     processor: unified({
-      remarkPlugins: [remarkMath],
+      // Load remark-gfm manually with singleTilde: false — the default
+      // pipeline enables it bare, and singleTilde: true turns ~After Story~
+      // into a strikethrough. Only ~~...~~ should strike.
+      gfm: false,
+      remarkPlugins: [[remarkGfm, { singleTilde: false }], remarkMath],
       rehypePlugins: [rehypeKatex],
     }),
     shikiConfig: {

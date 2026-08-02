@@ -23,7 +23,7 @@ Unrelated, do not touch: a separate repo serves `https://hihihi198.github.io/nav
 ## Stack
 
 - **Astro 7**, static output, TypeScript. **No CSS framework, no UI framework** (no Tailwind/React) — keep it that way unless the user asks.
-- Markdown uses the **unified (remark/rehype) pipeline** via `@astrojs/markdown-remark` — **not** Astro 7's default Sätteri — because math needs `remark-math` + `rehype-katex` (see `astro.config.mjs` → `markdown.processor`). Shiki highlighting runs on the same pipeline with dual themes (`rose-pine` / `rose-pine-dawn`) that emit `--shiki-dark` CSS vars; `components.css` maps them per theme and overrides the block background with `--color-panel`.
+- Markdown uses the **unified (remark/rehype) pipeline** via `@astrojs/markdown-remark` — **not** Astro 7's default Sätteri — because math needs `remark-math` + `rehype-katex` (see `astro.config.mjs` → `markdown.processor`). remark-gfm is loaded manually with **`singleTilde: false`** (the default pipeline enables it bare, and single-tilde `~...~` was eating tildes in titles like `~After Story~` — only `~~...~~` may strike through). Shiki highlighting runs on the same pipeline with dual themes (`rose-pine` / `rose-pine-dawn`) that emit `--shiki-dark` CSS vars; `components.css` maps them per theme and overrides the block background with `--color-panel`.
 - **KaTeX math** in article bodies: `$inline$` and `$$display$$`. The KaTeX CSS is imported by `src/pages/articles/[slug].astro`, so only article pages pay for it.
 - **Cloudflare Worker + KV** backend for the diary (`worker/`), deployed separately from the site.
 
