@@ -20,7 +20,7 @@ draft: false
 
 这些是我在高二的时候看的，年代比较久远就不按顺序记录了。
 
-| Title | Chinese Name | Romanji | English Name | Notes |
+| Title | Chinese Name | Romaji | English Name | Notes |
 |---|---|---|---|---|
 | <span lang="ja">とある科学の<ruby>超電磁砲<rt>レールガン</rt></ruby></span> | 某科学的超电磁炮 | Toaru Kagaku no Rērugan | A Certain Scientific Railgun | |
 | <span lang="ja">葬送のフリーレン</span> | 葬送的芙莉莲 | Sōsō no Furīren | Frieren: Beyond Journey's End | 很宁静的冒险。最喜欢的番之一。 |
@@ -39,7 +39,7 @@ draft: false
 
 高三寒假其实还看了国漫《罗小黑战记》《刺客伍六七》，不过感觉不怎么样的说。。。这段时间看的日漫：
 
-| Title | Chinese Name | Romanji | English Name | Notes |
+| Title | Chinese Name | Romaji | English Name | Notes |
 |---|---|---|---|---|
 | <span lang="ja">からかい上手の高木さん</span> | 擅长捉弄的高木同学 | Karakai Jōzu no Takagi-san | Teasing Master Takagi-san | 第一次发现狗粮的美味 |
 | <span lang="ja">からかい上手の高木さん2</span> | 擅长捉弄的高木同学2 | Karakai Jōzu no Takagi-san 2 | Teasing Master Takagi-san 2 | |
@@ -48,7 +48,7 @@ draft: false
 
 然后是高三下学期看的。
 
-| Title | Chinese Name | Romanji | English Name | Notes |
+| Title | Chinese Name | Romaji | English Name | Notes |
 |---|---|---|---|---|
 | <span lang="ja">CLANNAD -クラナド-</span> | 团子大家族 |  | CLANNAD | 神作 |
 | <span lang="ja">CLANNAD ～AFTER STORY～</span> | 团子大家族 第二季 | | CLANNAD ~After Story~ | |
@@ -57,7 +57,7 @@ draft: false
 
 ~~苦难的~~高三生活终于结束了！接下来是高三暑假。这段时间看完了美漫 *Pantheon* Season 1 & 2，不过个人感觉不怎么样。看的日漫有
 
-| Title | Chinese Name | Romanji | English Name | Notes |
+| Title | Chinese Name | Romaji | English Name | Notes |
 |---|---|---|---|---|
 | <span lang="ja">鋼の錬金術師 FULLMETAL ALCHEMIST</span> | 钢之炼金术师 2009 | Hagane no Renkinjutsushi | Fullmetal Alchemist: Brotherhood | |
 | <span lang="ja">けいおん!</span> | 轻音少女 |  | K-On! | 之前看的时候没有悟到，现在悟到了。卖萌是对的。 |
@@ -71,7 +71,7 @@ draft: false
 
 到了大一快结束的时候（2026 年 6 月），我对原神的热情褪得差不多了，开始看<span lang="ja">『処刑少女の生きる道』</span>。大一暑假看完的番有
 
-| Title | Chinese Name | Romanji | English Name | Notes |
+| Title | Chinese Name | Romaji | English Name | Notes |
 |---|---|---|---|---|
 | <span lang="ja">処刑少女の生きる道</span> | 处刑少女的生存之道 | Shokei Shōjo no Ikiru Michi | The Executioner and Her Way of Life | 第一次看 B 站上的低分作品（雾），出乎意料的还行？虽然过了一段时间就对剧情没什么印象了。 |
 | <span lang="ja">ダンガンロンパ 希望の学園と絶望の高校生</span> | 弹丸论破 希望的学园与绝望的高中生 | Danganronpa: Kibō no Gakuen to Zetsubō no Kōkōsei | Danganronpa: The Animation | 感觉有点恐怖所以开倍速看完的。有闲工夫再玩第二部吧。 |
@@ -86,7 +86,7 @@ draft: false
 
 接下来感兴趣、打算看的番
 
-| Title | Chinese Name | Romanji | English Name | Notes |
+| Title | Chinese Name | Romaji | English Name | Notes |
 |---|---|---|---|---|
 | <span lang="ja">葬送のフリーレン Season 2</span> | 葬送的芙莉莲 第二季 | Sōsō no Furīren Season 2 | Frieren: Beyond Journey's End Season 2 | |
 | <span lang="ja">Fate/stay night [Unlimited Blade Works] 2nd Season</span> | Fate/stay night UBW 第二季 | | Fate/stay night: Unlimited Blade Works Season 2 | |
