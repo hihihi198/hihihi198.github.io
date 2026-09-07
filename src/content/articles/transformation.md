@@ -2,7 +2,7 @@
 title: "Computer Graphics: Transformation"
 date: 2026-07-23
 summary: When we gaze upon the stars.
-tags: [essay, computer-graphics, linear-algebra]
+tags: [essay, computer-graphics, linear-algebra, games101]
 draft: false
 ---
 
@@ -33,6 +33,8 @@ $$
 同理，也可以认为 $A$ 是由列向量组成的行向量。既然这样，$AB$ 的每一列都是 $A$ 的列向量的线性组合，第 $i$ 列为系数为 $B$ 的第 $i$ 列。所以可以说 $(AB)^T=B^TA^T$。
 
 这样也就不难证明行秩等于列秩了。对于行秩为 $r$ 的矩阵 $C$，其行向量可以被 $r$ 个行向量的线性组合表出。将这 $r$ 个行向量组合为 $B$，则 $C=AB$。这样 $C$ 的列向量也是 $r$ 个 $A$ 的列向量的线性组合。于是列秩大于等于 $r$。反之亦然。
+
+在 *Introduction to Linear Algebra (Sixth Edition)* 中，这种分解方法用 $A=CR$ 表示，其中 $C$ 为 column matrix，$R$ 为 row matrix，容易理解这样取名的原因。
 
 所以矩阵乘法到底在干什么呢？简单来说，就是**以一个矩阵为系数，将另一个矩阵重新线性组合**的过程。不同的行意味着不同的系数，也就是不同的线性组合。
 
@@ -104,7 +106,7 @@ Eigen::Matrix4f get_projection_matrix(float eye_fov, float aspect_ratio,
 
     float eyev = eye_fov * MY_PI / 180;
     float n = zNear, f = zFar;
-    float t = n * std::tan(eyev), b = -t, r = t * aspect_ratio, l = -r;
+    float t = n * std::tan(eyev / 2), b = -t, r = t * aspect_ratio, l = -r; // Jul 24, 2026: Change from eyev to eyev / 2.
 
     Eigen::Matrix4f persp_to_ortho;
     persp_to_ortho <<
