@@ -2,7 +2,7 @@
 title: "MLP Example"
 date: 2026-09-08
 summary: A two-layer MLP from scratch — forward pass, backpropagation, initialization, and the PyTorch version.
-tags: [machine-learning, math, python]
+tags: [machine-learning, python]
 draft: false
 ---
 

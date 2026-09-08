@@ -1,8 +1,8 @@
 ---
-title: "Attention and the Transformer"
+title: "Review of Transformer"
 date: 2026-09-08
 summary: Scaled dot-product attention, causal masking, multi-head attention, and a tiny Transformer language model.
-tags: [machine-learning, math, python]
+tags: [machine-learning, transformer, python]
 draft: false
 ---
 
