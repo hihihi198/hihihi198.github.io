@@ -6,6 +6,7 @@
    (warm paper instead of warm ink). Add new colors to BOTH blocks. */
 :root {
   /* Color — light */
+  color-scheme: light;
   --color-bg: #faf5ec;
   --color-text: #26221b;
   --color-muted: #6e675a;
@@ -53,6 +54,7 @@
 }
 
 :root[data-theme='dark'] {
+  color-scheme: dark;
   --color-bg: #16130f;
   --color-text: #e9e2d4;
   --color-muted: #9c927e;
