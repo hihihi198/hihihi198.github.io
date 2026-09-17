@@ -6,6 +6,8 @@ tags: [machine-learning, transformer, python]
 draft: false
 ---
 
+Prerequisites: Matrix, [MLP](mlp-example.md)
+
 ## Attention Mechanism
 
 $$

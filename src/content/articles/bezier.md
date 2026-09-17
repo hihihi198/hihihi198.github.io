@@ -2,7 +2,7 @@
 title: "Bezier Cursive"
 date: 2026-07-22
 summary: Implementation of Bezier is easy.
-tags: [essay]
+tags: [essay, computer-graphics, games101]
 draft: false
 ---
 

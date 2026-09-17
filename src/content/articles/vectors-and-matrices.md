@@ -3,7 +3,7 @@ title: "*Introduction to Linear Algebra* Review"
 date: 2026-07-22
 summary: A=CR
 tags: [review, linear-algebra]
-draft: true
+draft: false
 ---
 
 # Vectors and Matrices
