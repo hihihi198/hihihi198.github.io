@@ -76,22 +76,21 @@ draft: false
 | <span lang="ja">Fate/Zero</span> | Fate/Zero | | Fate/Zero | 神作。先看的这部前传再看的 Fate/stay night UBW，感觉这个顺序是对的。故事充满悲剧色彩，让人感到无奈但又合理。最喜欢的台词还是 Saber 这句：<br /><span lang="ja">エクス～カリバー！</span> |
 | <span lang="ja">Fate/Zero 2nd Season</span> | Fate/Zero 第二季 | | Fate/Zero Season 2 | <span lang="ja">衛宮切嗣</span>，又一个让人意难平的角色。可能是我看这么多日漫中唯一喜欢的大叔？ |
 | <span lang="ja">Fate/stay night [Unlimited Blade Works]</span> | Fate/stay night UBW | | Fate/stay night: Unlimited Blade Works | 感觉没有前传好，是因为被 Galgame 限制了发挥吗？ |
+| <span lang="ja">Fate/stay night [Unlimited Blade Works] 2nd Season</span> | Fate/stay night UBW 第二季 | | Fate/stay night: Unlimited Blade Works Season 2 |  |
 | <span lang="ja">悪役令嬢レベル99～私は裏ボスですが魔王ではありません～</span> | 恶役千金Lv99～我是隐藏BOSS但不是魔王～ | Akuyaku Reijō Reberu 99: Watashi wa Ura Bosu desu ga Maō dewa Arimasen | Villainess Level 99: I May Be the Hidden Boss but I'm Not the Demon Lord | 看的第一部异世界厕纸？非常爽，意犹未尽。可惜后来找不到这种感觉的厕纸了。 |
+| <span lang="ja">葬送のフリーレン Season 2</span> | 葬送的芙莉莲 第二季 | Sōsō no Furīren Season 2 | Frieren: Beyond Journey's End Season 2 | 依旧好看 |
 | 攻殻機動隊 | 攻壳机动队 1995 |  | Ghost in the Shell | 这个是剧场版。和 TV 版的剧情似乎关系不大。 |
 
-看完 Fate/Zero 之后甚至入坑了崩铁（难道不应该入坑型月或者 FGO 吗？）去抽 Saber，本来想攒 6+1 的，奈何箱庭+回合制实在吃不下，剧情也不怎么吸引我，抽了 0+1 就退游了。Saber 大约是我除了荧以外最喜欢的二次元角色了。
+顺便说一句，Fate 里的 Saber 可能是我除了原神的荧以外最喜欢的二次元角色了。
 
-这段时间我决定不在 Bilibili 上看番了，转而在 Crunchyroll 上看，如果没有再去 Bilibili 上找。
-
-接下来感兴趣、打算看的番
+接下来看到一半或者感兴趣、打算看的番
 
 | Title | Chinese Name | Romaji | English Name | Notes |
 |---|---|---|---|---|
-| <span lang="ja">葬送のフリーレン Season 2</span> | 葬送的芙莉莲 第二季 | Sōsō no Furīren Season 2 | Frieren: Beyond Journey's End Season 2 | |
-| <span lang="ja">Fate/stay night [Unlimited Blade Works] 2nd Season</span> | Fate/stay night UBW 第二季 | | Fate/stay night: Unlimited Blade Works Season 2 | |
-| <span lang="ja">超かぐや姫！</span> | 超时空辉夜姬 | Chō Kaguya-hime! | Cosmic Princess Kaguya! | Crunchyroll 上竟然没有！神了 |
+| <span lang="ja">超かぐや姫！</span> | 超时空辉夜姬 | Chō Kaguya-hime! | Cosmic Princess Kaguya! | 看了一半 |
+| <span lang="ja">魔女の旅々</span> | 魔女之旅 | Majo no Tabitabi | Wandering Witch: The Journey of Elaina | 看了一半 |
 | <span lang="ja">薬屋のひとりごと</span> | 药屋少女的呢喃 | Kusuriya no Hitorigoto | The Apothecary Diaries | |
 | <span lang="ja">二十世紀電気目録</span> | 二十世纪电气目录 | Nijusseiki Denki Mokuroku | Sparks of Tomorrow | |
 | <span lang="ja">衛宮さんちの今日のごはん</span> | 卫宫家今天的饭 | Emiya-san Chi no Kyō no Gohan | Today's Menu for Emiya Family | |
 
-等着 *Mahotsukai no Yoru* 动画版！
+等着 *Mahotsukai no Yoru* 剧场版！
