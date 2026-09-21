@@ -128,9 +128,15 @@ const API_BASE = 'https://diary.hihihi198.workers.dev';
       render();
     }
 
-    editToggle?.addEventListener('click', () => {
-      if (unlocked) exitEditMode();
-      else { if (unlockRow) unlockRow.hidden = false; pwInput?.focus(); }
+    editToggle?.addEventListener('click', async () => {
+      if (unlocked) { exitEditMode(); return; }
+      // A still-valid session (token/cookie) resumes editing without asking.
+      if (editToggle) editToggle.disabled = true;
+      const ok = await checkAuth('');
+      if (editToggle) editToggle.disabled = false;
+      if (ok) { enterEditMode(); return; }
+      if (unlockRow) unlockRow.hidden = false;
+      pwInput?.focus();
     });
 
     unlockRow?.addEventListener('submit', async (e) => {

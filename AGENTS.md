@@ -148,7 +148,7 @@ CLOUDFLARE_API_TOKEN="$(cat ~/.cloudflare-api-token)" \
 Static shell + a `<script>` that does everything client-side:
 
 - Fetches `GET /api/entries`, groups entries by month, builds the timeline DOM (classes above), newest first.
-- **Edit mode:** the page loads read-only unless a valid session cookie is present (then edit mode opens automatically). Otherwise "Edit" reveals a password prompt → `GET /api/auth` with the password → success plants the session cookie (30 days) and shows the composer and inline Edit/Delete per entry. The unlock row remains the fallback when cookies are blocked.
+- **Edit mode:** the page loads read-only unless a valid session token/cookie is present (then edit mode opens automatically). Clicking "Edit" silently re-probes the session first — the password prompt appears only when the session is gone (expired/revoked or storage cleared); password success issues a fresh token (30 days). The unlock row is never shown while a session is valid.
 - **Deep links:** `/diary/#<id>` scrolls to and flashes an entry. The scroll is deferred a frame because entries render *after* load (native hash-scroll fires too early). Each entry has a `#` button that jumps + copies the permalink — entry bodies are **not** click-to-jump links (the user asked for explicit buttons).
 
 If you rewrite this page, preserve those behaviors and keep the API/auth logic intact.
