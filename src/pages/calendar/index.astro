@@ -80,12 +80,26 @@ const API_BASE = 'https://diary.hihihi198.workers.dev';
       return 5;
     }
 
+    // Session token: kept in localStorage (first-party — survives the
+    // third-party-cookie blocking that kills the session cookie in Safari and
+    // Chrome) and sent as the x-session-token header.
+    const TOKEN_KEY = 'diarySession';
+    const storedToken = () => localStorage.getItem(TOKEN_KEY) || '';
+
     async function checkAuth(pw?: string) {
       try {
         const headers: Record<string, string> = {};
         if (pw) headers['x-admin-password'] = pw;
+        const t = storedToken();
+        if (t) headers['x-session-token'] = t;
         const res = await fetch(`${API}/api/auth`, { credentials: 'include', headers });
-        return res.ok;
+        if (res.ok) {
+          const data = await res.json().catch(() => ({}));
+          if (data.token) localStorage.setItem(TOKEN_KEY, data.token);
+          return true;
+        }
+        if (t) localStorage.removeItem(TOKEN_KEY); // expired or revoked
+        return false;
       } catch {
         return false;
       }
@@ -325,10 +339,11 @@ const API_BASE = 'https://diary.hihihi198.workers.dev';
       if (!items.length) { setCMsg('Add at least one item.', 'err'); return; }
       if (cSave) cSave.disabled = true;
       try {
+        const t = storedToken();
         const res = await fetch(`${API}/api/worklog/${selected}`, {
           method: 'PUT',
           credentials: 'include',
-          headers: { 'content-type': 'application/json' },
+          headers: { 'content-type': 'application/json', ...(t ? { 'x-session-token': t } : {}) },
           body: JSON.stringify({ items }),
         });
         const data = await res.json();
@@ -349,7 +364,12 @@ const API_BASE = 'https://diary.hihihi198.workers.dev';
       if (!selected) return;
       if (!confirm('Delete this day permanently?')) return;
       try {
-        const res = await fetch(`${API}/api/worklog/${selected}`, { method: 'DELETE', credentials: 'include' });
+        const t = storedToken();
+        const res = await fetch(`${API}/api/worklog/${selected}`, {
+          method: 'DELETE',
+          credentials: 'include',
+          headers: t ? { 'x-session-token': t } : {},
+        });
         if (!res.ok) { setCMsg('Delete failed.', 'err'); return; }
         setCMsg('');
         if (composer) composer.hidden = true;

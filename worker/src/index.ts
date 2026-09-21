@@ -37,7 +37,7 @@ const SITE_ORIGIN = 'https://hihihi198.github.io';
 const corsHeaders: Record<string, string> = {
   'Access-Control-Allow-Origin': SITE_ORIGIN,
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'content-type, x-admin-password',
+  'Access-Control-Allow-Headers': 'content-type, x-admin-password, x-session-token',
   // Cookie auth: the origin above is specific (not '*'), which credentials mode requires.
   'Access-Control-Allow-Credentials': 'true',
   Vary: 'Origin',
@@ -115,9 +115,33 @@ async function validSession(request: Request, env: Env): Promise<boolean> {
   return crypto.subtle.verify('HMAC', key, sigBytes, payloadBytes);
 }
 
+// --- Session tokens (localStorage variant) ----------------------------------
+// The session cookie above is third-party from the site's perspective and is
+// blocked by Safari ITP / Chrome's third-party-cookie phase-out. So on password
+// unlock the worker also issues an opaque random token; pages keep it in
+// localStorage (first-party, survives) and send it as the x-session-token
+// header. Only its SHA-256 is stored in KV, with KV expiration as the TTL.
+
+async function issueToken(env: Env): Promise<string> {
+  const token = b64url(crypto.getRandomValues(new Uint8Array(32)));
+  const hash = new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(token)));
+  await env.DIARY.put('session:' + b64url(hash), JSON.stringify({ createdAt: Date.now() }), {
+    expirationTtl: SESSION_TTL_SEC,
+  });
+  return token;
+}
+
+async function validToken(request: Request, env: Env): Promise<boolean> {
+  const token = request.headers.get('x-session-token');
+  if (!token) return false;
+  const hash = new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(token)));
+  return (await env.DIARY.get('session:' + b64url(hash))) !== null;
+}
+
 async function authorized(request: Request, env: Env): Promise<boolean> {
   if (!env.ADMIN_PASSWORD) return false;
   if (await validSession(request, env)) return true;
+  if (await validToken(request, env)) return true;
   return verify(request.headers.get('x-admin-password') ?? '', env.ADMIN_PASSWORD);
 }
 
@@ -433,20 +457,25 @@ export default {
 
     // Password/session check — used by the diary and calendar pages to verify
     // before revealing edit mode. Authenticating with the password header also
-    // issues a session cookie; cookie-only requests just validate the session.
+    // issues a session cookie and returns a session token for localStorage
+    // (the cookie is third-party and blocked by some browsers; the token is
+    // the reliable path). Cookie/token-only requests just validate.
     if (parts[0] === 'api' && parts[1] === 'auth' && parts.length === 2 && method === 'GET') {
       if (!(await authorized(request, env))) return json({ error: 'unauthorized' }, 401);
-      const res = json({ ok: true });
+      let token: string | undefined;
       if (request.headers.get('x-admin-password')) {
         const exp = Math.floor(Date.now() / 1000) + SESSION_TTL_SEC;
-        const token = await signSession(env, exp);
+        const cookieToken = await signSession(env, exp);
+        token = await issueToken(env);
         // SameSite=None because the site calls this worker cross-site.
+        const res = json({ ok: true, token });
         res.headers.append(
           'Set-Cookie',
-          `session=${encodeURIComponent(token)}; HttpOnly; Secure; SameSite=None; Path=/; Max-Age=${SESSION_TTL_SEC}`
+          `session=${encodeURIComponent(cookieToken)}; HttpOnly; Secure; SameSite=None; Path=/; Max-Age=${SESSION_TTL_SEC}`
         );
+        return res;
       }
-      return res;
+      return json({ ok: true });
     }
 
     if (parts[0] === 'api' && parts[1] === 'entries') {
