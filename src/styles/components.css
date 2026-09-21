@@ -713,6 +713,15 @@
   display: block;
   cursor: default;
 }
+.cal-diligence {
+  margin: 0.5rem 0 0;
+  font-size: 0.78rem;
+  color: var(--color-muted);
+}
+.cal-diligence strong {
+  color: var(--color-text);
+  font-weight: 600;
+}
 
 .cal-detail {
   margin-top: 1.5rem;

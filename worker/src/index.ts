@@ -179,13 +179,16 @@ function parseWorkDayInput(payload: any): ParsedWorkDay {
   if (!payload || !Array.isArray(payload.items)) return { ok: false, error: 'items must be an array' };
   if (payload.items.length > 100) return { ok: false, error: 'too many items' };
   const items: WorkItem[] = [];
+  let total = 0;
   for (const raw of payload.items) {
     const text = String(raw?.text ?? '').trim();
     if (!text) return { ok: false, error: 'item text is required' };
     if (text.length > 500) return { ok: false, error: 'item text too long' };
     const hours = Number(raw?.hours);
-    if (!Number.isFinite(hours) || hours <= 0 || hours > 24)
-      return { ok: false, error: 'hours must be a number in (0, 24]' };
+    if (!Number.isFinite(hours) || hours <= 0 || hours > 16)
+      return { ok: false, error: 'hours must be a number in (0, 16]' };
+    total += hours;
+    if (total > 16) return { ok: false, error: 'total hours per day cannot exceed 16' };
     items.push({ id: String(raw?.id ?? items.length + 1), text, hours });
   }
   return { ok: true, items };

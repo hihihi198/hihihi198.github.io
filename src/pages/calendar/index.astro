@@ -31,6 +31,11 @@ const API_BASE = 'https://diary.hihihi198.workers.dev';
     <span>More</span>
   </div>
 
+  <p class="cal-diligence"
+     title="Each of the last 30 days (today excluded) scores (hours − 4)², weighted linearly by recency — yesterday counts 1×, 30 days ago 1/30. Days of 4h or less score 0.">
+    Diligence index · last 30 days: <strong id="dil-value">—</strong>
+  </p>
+
   <section id="cal-detail" class="cal-detail" hidden></section>
 
   <section id="composer" class="composer" hidden>
@@ -89,6 +94,29 @@ const API_BASE = 'https://diary.hihihi198.workers.dev';
       if (total <= 4) return 3;
       if (total <= 8) return 4;
       return 5;
+    }
+
+    // Diligence index: over the 30 days before today (today excluded), each
+    // day scores (hours − 4)² — days of 4h or less score 0 — weighted linearly
+    // by recency: w(age) = (31 − age)/30, so yesterday counts 1× and 30 days
+    // ago counts 1/30.
+    function diligenceIndex(): number {
+      const today = parseDay(todayStr());
+      let score = 0;
+      for (let age = 1; age <= 30; age++) {
+        const d = new Date(today);
+        d.setUTCDate(d.getUTCDate() - age);
+        const day = days.get(d.toISOString().slice(0, 10));
+        if (!day) continue;
+        const excess = Math.max(day.totalHours - 4, 0);
+        score += ((31 - age) / 30) * excess * excess;
+      }
+      return score;
+    }
+
+    function updateDiligence() {
+      const el = document.getElementById('dil-value');
+      if (el) el.textContent = diligenceIndex().toFixed(1);
     }
 
     // Session token: kept in localStorage (first-party — survives the
@@ -169,6 +197,7 @@ const API_BASE = 'https://diary.hihihi198.workers.dev';
         const list = await res.json();
         days = new Map(list.map((d: any) => [d.date, d]));
         render();
+        updateDiligence();
       } catch {
         if (app) app.innerHTML = '<p class="empty">Couldn’t load the calendar.</p>';
       }
@@ -300,7 +329,7 @@ const API_BASE = 'https://diary.hihihi198.workers.dev';
       row.className = 'cal-item';
       row.innerHTML = `
         <input type="text" class="cal-item-text" placeholder="What did you do?" value="${escapeHtml(text)}" aria-label="Activity">
-        <input type="number" class="cal-item-hours" min="0.25" max="24" step="0.25" placeholder="h" value="${escapeHtml(hours)}" aria-label="Hours">
+        <input type="number" class="cal-item-hours" min="0.25" max="16" step="0.25" placeholder="h" value="${escapeHtml(hours)}" aria-label="Hours">
         <button type="button" class="cal-item-remove" aria-label="Remove item">×</button>`;
       row.querySelector('.cal-item-remove')?.addEventListener('click', () => {
         row.remove();
@@ -337,12 +366,18 @@ const API_BASE = 'https://diary.hihihi198.workers.dev';
       if (!cItems) return;
       const date = todayStr();
       const items: { text: string; hours: number }[] = [];
+      let total = 0;
       for (const row of Array.from(cItems.children)) {
         const text = (row.querySelector('.cal-item-text') as HTMLInputElement | null)?.value.trim() || '';
         if (!text) continue;
         const hours = Number((row.querySelector('.cal-item-hours') as HTMLInputElement | null)?.value);
-        if (!Number.isFinite(hours) || hours <= 0 || hours > 24) {
-          setCMsg('Each item needs a description and hours in (0, 24].', 'err');
+        if (!Number.isFinite(hours) || hours <= 0 || hours > 16) {
+          setCMsg('Each item needs a description and hours in (0, 16].', 'err');
+          return;
+        }
+        total += hours;
+        if (total > 16) {
+          setCMsg('Total hours per day cannot exceed 16.', 'err');
           return;
         }
         items.push({ text, hours });

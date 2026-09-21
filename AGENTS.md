@@ -60,7 +60,7 @@ Rules to preserve:
 `.post__header .post__title .post__meta .post__back .post-body` ·
 `.timeline .month .month-label .entry .node .entry-head .linkbtn .entry-tools .loading .empty` ·
 `.diary-head .lede .edit-toggle .unlock-row .pw-input .unlock-msg .composer .composer-title .field .composer-actions .composer-msg` ·
-`.cal-head .cal-heatmap .cal-months .cal-month .cal-month--pad .cal-grid .cal-weekdays .cal-weekday .cal-week .cal-day .cal-day--l1 .cal-day--l2 .cal-day--l3 .cal-day--l4 .cal-day--l5 .cal-day--empty .cal-today .cal-day--selected .cal-legend .cal-detail .cal-detail-hours .cal-detail-total .cal-detail-empty .cal-items .cal-item .cal-item-text .cal-item-hours .cal-item-remove`
+`.cal-head .cal-heatmap .cal-months .cal-month .cal-month--pad .cal-grid .cal-weekdays .cal-weekday .cal-week .cal-day .cal-day--l1 .cal-day--l2 .cal-day--l3 .cal-day--l4 .cal-day--l5 .cal-day--empty .cal-today .cal-day--selected .cal-legend .cal-diligence .cal-detail .cal-detail-hours .cal-detail-total .cal-detail-empty .cal-items .cal-item .cal-item-text .cal-item-hours .cal-item-remove`
 
 Keep these stable; renaming means editing markup too.
 
@@ -160,6 +160,8 @@ Static shell + a `<script>`, same client-side architecture as the diary page:
 - Fetches `GET /api/worklog`, renders a GitHub-contributions-style grid (week columns, Sunday-first; month labels on top, weekday labels on the left). Cell intensity = `totalHours` for that day, banded `(0,1] (1,2] (2,4] (4,8] >8` into `.cal-day--l1…--l5`; tints are `color-mix` on `--color-accent` (both themes adapt automatically).
 - Range: earliest logged day (at least ~6 months back) → today; the grid scrolls horizontally and starts scrolled to today. **"Today" is the UTC+8 calendar day** (`Date.now() + 8h`), unlike the diary worker's UTC-day default — the work log is the author's own, keyed to their timezone.
 - Cells are **read-only history**: clicking a logged day (hash deep link `/calendar/#YYYY-MM-DD`) selects it and shows a detail panel (items + total); empty cells are always inert. **Only today is editable** — entering edit mode opens the composer for today immediately (no cell-selection step); Save PUTs the day, "Clear today" deletes it. A legend under the grid (`.cal-legend`) shows the intensity scale ("Less → More"); like GitHub, intensity reads as brighter on the dark theme and darker on the light one, since both derive from `--color-accent`.
+- **Hours are capped at 16 per item and 16 per day total** (worker `parseWorkDayInput` enforces both; the client mirrors it).
+- **Diligence index** (`.cal-diligence`, shown under the legend): over the 30 days before today — today excluded — each day scores `(hours − 4)²` (≤4h scores 0), weighted linearly by recency `w(age) = (31 − age)/30` (yesterday 1×, 30 days ago 1/30). Recomputed client-side on load; the formula is documented in the element's `title` tooltip.
 - Auth/edit-mode flow is identical to the diary page (session token, unlock-row fallback).
 
 ## Workflow
