@@ -605,6 +605,199 @@
   color: var(--color-danger);
 }
 
+/* ---------- Calendar / work log ---------- */
+/* Heat levels are color-mix tints of the accent — the only token that flips
+   between themes, so the scale adapts for free. */
+.cal-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 0 0 1.75rem;
+}
+.cal-heatmap {
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+  scrollbar-width: thin;
+}
+.cal-months,
+.cal-grid {
+  display: flex;
+  gap: 3px;
+}
+.cal-months {
+  margin-bottom: 0.35rem;
+  font-size: 0.72rem;
+  line-height: 1;
+  color: var(--color-muted);
+}
+.cal-months-spacer {
+  flex: 0 0 1.75rem;
+}
+.cal-month {
+  flex: 0 0 12px;
+  white-space: nowrap;
+  overflow: visible;
+}
+.cal-month--pad {
+  visibility: hidden;
+}
+.cal-weekdays {
+  flex: 0 0 1.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.cal-weekday {
+  height: 12px;
+  line-height: 12px;
+  font-size: 0.68rem;
+  color: var(--color-muted);
+}
+.cal-week {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.cal-day {
+  width: 12px;
+  height: 12px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  background: color-mix(in srgb, var(--color-accent) 8%, transparent);
+}
+.cal-day--l1 {
+  background: color-mix(in srgb, var(--color-accent) 20%, transparent);
+}
+.cal-day--l2 {
+  background: color-mix(in srgb, var(--color-accent) 35%, transparent);
+}
+.cal-day--l3 {
+  background: color-mix(in srgb, var(--color-accent) 50%, transparent);
+}
+.cal-day--l4 {
+  background: color-mix(in srgb, var(--color-accent) 70%, transparent);
+}
+.cal-day--l5 {
+  background: color-mix(in srgb, var(--color-accent) 90%, transparent);
+}
+.cal-day--empty:disabled {
+  cursor: default;
+}
+.cal-day:not(:disabled):hover {
+  outline: 1px solid var(--color-accent);
+}
+.cal-day:focus-visible {
+  outline: 1px solid var(--color-accent);
+  outline-offset: 1px;
+}
+.cal-today {
+  outline: 1px solid var(--color-text);
+}
+.cal-day--selected {
+  outline: 2px solid var(--color-accent);
+}
+
+.cal-detail {
+  margin-top: 1.5rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-lg);
+}
+.cal-detail h2 {
+  margin: 0 0 0.6rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+.cal-detail ul {
+  margin: 0;
+  padding-left: 1.2rem;
+}
+.cal-detail li {
+  margin-bottom: 0.25rem;
+}
+.cal-detail-hours {
+  color: var(--color-muted);
+  font-size: 0.85rem;
+}
+.cal-detail-total,
+.cal-detail-empty {
+  margin: 0.6rem 0 0;
+  font-size: 0.85rem;
+  color: var(--color-muted);
+}
+.cal-detail .editbtn {
+  margin-top: 0.75rem;
+  font: inherit;
+  font-size: 0.8rem;
+  padding: 0.2rem 0.6rem;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  color: var(--color-muted);
+  cursor: pointer;
+}
+.cal-detail .editbtn:hover {
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+.cal-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+.cal-item input[type='text'] {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  padding: 0.5rem;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius);
+  background: var(--color-bg);
+  color: var(--color-text);
+  box-sizing: border-box;
+}
+.cal-item input[type='number'] {
+  width: 4.5rem;
+  flex-shrink: 0;
+  font: inherit;
+  padding: 0.5rem;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius);
+  background: var(--color-bg);
+  color: var(--color-text);
+  box-sizing: border-box;
+}
+.cal-item-remove {
+  flex-shrink: 0;
+  font: inherit;
+  font-size: 1rem;
+  line-height: 1;
+  width: 2rem;
+  padding: 0.4rem 0;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  color: var(--color-muted);
+  cursor: pointer;
+}
+.cal-item-remove:hover {
+  color: var(--color-danger);
+  border-color: var(--color-danger);
+}
+.composer-actions .danger {
+  margin-left: auto;
+  color: var(--color-danger);
+}
+.composer-actions .danger:hover {
+  border-color: var(--color-danger);
+}
+
 /* ---------- Tag index ---------- */
 .tag-list {
   display: flex;

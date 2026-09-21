@@ -1,0 +1,386 @@
+---
+import Layout from '../../layouts/Layout.astro';
+
+// Worker origin (shared with the diary — the work log lives in the same Worker).
+const API_BASE = 'https://diary.hihihi198.workers.dev';
+---
+<Layout title="Calendar · hihihi198">
+  <div class="cal-head">
+    <p class="lede">Daily work log — the longer the day, the darker the cell.</p>
+    <button id="edit-toggle" class="edit-toggle" type="button">Edit</button>
+  </div>
+
+  <form id="unlock-row" class="unlock-row" hidden>
+    <input id="pw-input" class="pw-input" type="password" placeholder="Password" autocomplete="current-password">
+    <button id="unlock-btn" type="submit">Unlock</button>
+    <span id="unlock-msg" class="unlock-msg"></span>
+  </form>
+
+  <div id="cal-app" data-api={API_BASE}>
+    <p class="loading">Loading…</p>
+  </div>
+
+  <section id="cal-detail" class="cal-detail" hidden></section>
+
+  <section id="composer" class="composer" hidden>
+    <h2 id="composer-title" class="composer-title">Log work</h2>
+    <div id="c-items"></div>
+    <div class="composer-actions">
+      <button id="c-add" type="button">Add item</button>
+      <button id="c-save" type="button" class="primary">Save</button>
+      <button id="c-cancel" type="button">Cancel</button>
+      <button id="c-delete" type="button" class="danger">Delete day</button>
+    </div>
+    <p id="c-msg" class="composer-msg"></p>
+  </section>
+
+  <script>
+    const app = document.getElementById('cal-app');
+    const API = app?.dataset.api || '';
+
+    const editToggle = document.getElementById('edit-toggle');
+    const unlockRow = document.getElementById('unlock-row');
+    const pwInput = document.getElementById('pw-input') as HTMLInputElement | null;
+    const unlockBtn = document.getElementById('unlock-btn');
+    const unlockMsg = document.getElementById('unlock-msg');
+    const detail = document.getElementById('cal-detail');
+    const composer = document.getElementById('composer');
+    const cTitle = document.getElementById('composer-title');
+    const cItems = document.getElementById('c-items');
+    const cAdd = document.getElementById('c-add');
+    const cSave = document.getElementById('c-save') as HTMLButtonElement | null;
+    const cCancel = document.getElementById('c-cancel');
+    const cDelete = document.getElementById('c-delete');
+    const cMsg = document.getElementById('c-msg');
+
+    let unlocked = false;
+    let days = new Map<string, any>();
+    let selected: string | null = null;
+
+    // Calendar days, not instants: "today" is the UTC+8 calendar day (the
+    // author's timezone), and all date math runs on UTC-midnight Date objects.
+    const todayStr = () => new Date(Date.now() + 8 * 3600_000).toISOString().slice(0, 10);
+    const parseDay = (s: string) => new Date(s + 'T00:00:00.000Z');
+    const escapeHtml = (s: string) =>
+      String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
+    const fmtDay = (d: Date) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+    const fmtDayLong = (d: Date) => d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', timeZone: 'UTC' });
+    const monthShort = (d: Date) => d.toLocaleDateString('en-US', { month: 'short', timeZone: 'UTC' });
+    const setCMsg = (html: string, kind = '') => {
+      if (cMsg) { cMsg.innerHTML = html; cMsg.className = 'composer-msg ' + kind; }
+    };
+
+    // Intensity bands on total hours.
+    function band(total: number): number {
+      if (total <= 0) return 0;
+      if (total <= 1) return 1;
+      if (total <= 2) return 2;
+      if (total <= 4) return 3;
+      if (total <= 8) return 4;
+      return 5;
+    }
+
+    async function checkAuth(pw?: string) {
+      try {
+        const headers: Record<string, string> = {};
+        if (pw) headers['x-admin-password'] = pw;
+        const res = await fetch(`${API}/api/auth`, { credentials: 'include', headers });
+        return res.ok;
+      } catch {
+        return false;
+      }
+    }
+
+    function enterEditMode() {
+      unlocked = true;
+      if (editToggle) { editToggle.textContent = 'Done'; editToggle.classList.add('active'); }
+      if (unlockRow) unlockRow.hidden = true;
+      if (pwInput) pwInput.value = '';
+      render();
+      if (selected) renderDetail();
+    }
+
+    function exitEditMode() {
+      unlocked = false;
+      if (editToggle) { editToggle.textContent = 'Edit'; editToggle.classList.remove('active'); }
+      if (composer) composer.hidden = true;
+      if (selected) renderDetail();
+      render();
+    }
+
+    editToggle?.addEventListener('click', () => {
+      if (unlocked) exitEditMode();
+      else { if (unlockRow) unlockRow.hidden = false; pwInput?.focus(); }
+    });
+
+    unlockRow?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const pw = pwInput?.value || '';
+      if (!pw) { if (unlockMsg) unlockMsg.textContent = 'Enter your password.'; return; }
+      if (unlockBtn) unlockBtn.disabled = true;
+      const ok = await checkAuth(pw); // success also plants the session cookie
+      if (unlockBtn) unlockBtn.disabled = false;
+      if (ok) {
+        if (unlockMsg) unlockMsg.textContent = '';
+        enterEditMode();
+      } else {
+        if (unlockMsg) unlockMsg.textContent = 'Wrong password.';
+      }
+    });
+
+    async function load() {
+      if (!app) return;
+      try {
+        const res = await fetch(`${API}/api/worklog`, { credentials: 'include' });
+        const list = await res.json();
+        days = new Map(list.map((d: any) => [d.date, d]));
+        render();
+      } catch {
+        if (app) app.innerHTML = '<p class="empty">Couldn’t load the calendar.</p>';
+      }
+    }
+
+    function render() {
+      if (!app) return;
+      const today = todayStr();
+
+      // Range: earliest logged day (but at least ~6 months back) → today.
+      let start = parseDay(today);
+      start.setUTCMonth(start.getUTCMonth() - 6);
+      for (const key of days.keys()) {
+        const d = parseDay(key);
+        if (d < start) start = d;
+      }
+      const end = parseDay(today);
+      start.setUTCDate(start.getUTCDate() - start.getUTCDay()); // back to Sunday
+      end.setUTCDate(end.getUTCDate() + (6 - end.getUTCDay())); // forward to Saturday
+
+      const root = document.createElement('div');
+      root.className = 'cal-heatmap';
+
+      const months = document.createElement('div');
+      months.className = 'cal-months';
+      months.append(Object.assign(document.createElement('span'), { className: 'cal-months-spacer' }));
+
+      const grid = document.createElement('div');
+      grid.className = 'cal-grid';
+
+      const wkCol = document.createElement('div');
+      wkCol.className = 'cal-weekdays';
+      for (const d of ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']) {
+        const s = document.createElement('span');
+        s.className = 'cal-weekday';
+        s.textContent = d;
+        wkCol.append(s);
+      }
+      grid.append(wkCol);
+
+      let prevMonth = -1;
+      for (let weekStart = new Date(start); weekStart <= end; weekStart.setUTCDate(weekStart.getUTCDate() + 7)) {
+        const m = weekStart.getUTCMonth();
+        const label = document.createElement('span');
+        label.className = 'cal-month' + (m === prevMonth ? ' cal-month--pad' : '');
+        label.textContent = m === prevMonth ? '' : monthShort(weekStart);
+        months.append(label);
+        prevMonth = m;
+
+        const col = document.createElement('div');
+        col.className = 'cal-week';
+        for (let i = 0; i < 7; i++) {
+          const d = new Date(weekStart);
+          d.setUTCDate(d.getUTCDate() + i);
+          const key = d.toISOString().slice(0, 10);
+          const day = days.get(key);
+          const cell = document.createElement('button');
+          cell.type = 'button';
+          cell.className = 'cal-day';
+          cell.dataset.date = key;
+          const lvl = day ? band(day.totalHours) : 0;
+          if (lvl > 0) cell.classList.add('cal-day--l' + lvl);
+          else cell.classList.add('cal-day--empty');
+          if (key === today) cell.classList.add('cal-today');
+          if (key === selected) cell.classList.add('cal-day--selected');
+          if (!day && !unlocked) cell.disabled = true;
+          const total = day ? day.totalHours : 0;
+          cell.setAttribute('aria-label', day ? `${fmtDay(d)}: ${total}h` : `${fmtDay(d)}: no work logged`);
+          col.append(cell);
+        }
+        grid.append(col);
+      }
+
+      root.append(months, grid);
+      app.innerHTML = '';
+      app.append(root);
+      // Start scrolled to today (the right edge).
+      root.scrollLeft = root.scrollWidth;
+    }
+
+    function renderDetail() {
+      if (!detail) return;
+      if (!selected) { detail.hidden = true; detail.innerHTML = ''; return; }
+      const day = days.get(selected);
+      if (!day && !unlocked) { detail.hidden = true; detail.innerHTML = ''; return; }
+      const d = parseDay(selected);
+      let html = `<h2>${fmtDayLong(d)}</h2>`;
+      if (day && day.items.length) {
+        html += '<ul>';
+        for (const it of day.items) html += `<li>${escapeHtml(it.text)} <span class="cal-detail-hours">${it.hours}h</span></li>`;
+        html += '</ul>';
+        html += `<p class="cal-detail-total">${day.totalHours}h total</p>`;
+      } else {
+        html += '<p class="cal-detail-empty">Nothing logged for this day.</p>';
+      }
+      if (unlocked) html += '<button type="button" class="editbtn" id="detail-edit">Edit</button>';
+      detail.innerHTML = html;
+      detail.hidden = false;
+      document.getElementById('detail-edit')?.addEventListener('click', openComposer);
+    }
+
+    function selectDay(date: string, fromHash = false) {
+      selected = date;
+      document.querySelectorAll('.cal-day--selected').forEach((el) => el.classList.remove('cal-day--selected'));
+      const cell = app?.querySelector(`.cal-day[data-date="${date}"]`);
+      if (cell) {
+        cell.classList.add('cal-day--selected');
+        cell.scrollIntoView({ block: 'nearest', inline: 'center' });
+      }
+      renderDetail();
+      if (composer && !composer.hidden) populateComposer();
+      if (!fromHash) {
+        if (location.hash !== '#' + date) location.hash = date;
+        else renderDetail();
+      }
+    }
+
+    // Day cells — event delegation.
+    app?.addEventListener('click', (ev) => {
+      const target = ev.target;
+      if (!(target instanceof Element)) return;
+      const cell = target.closest('.cal-day');
+      if (!cell) return;
+      const date = cell.getAttribute('data-date');
+      if (date) selectDay(date);
+    });
+
+    // --- Composer ------------------------------------------------------------
+
+    function itemRow(text = '', hours = ''): HTMLElement {
+      const row = document.createElement('div');
+      row.className = 'cal-item';
+      row.innerHTML = `
+        <input type="text" class="cal-item-text" placeholder="What did you do?" value="${escapeHtml(text)}" aria-label="Activity">
+        <input type="number" class="cal-item-hours" min="0.25" max="24" step="0.25" placeholder="h" value="${escapeHtml(hours)}" aria-label="Hours">
+        <button type="button" class="cal-item-remove" aria-label="Remove item">×</button>`;
+      row.querySelector('.cal-item-remove')?.addEventListener('click', () => {
+        row.remove();
+        if (cItems && !cItems.children.length) cItems.append(itemRow());
+      });
+      return row;
+    }
+
+    function populateComposer() {
+      if (!cItems || !selected) return;
+      cItems.innerHTML = '';
+      const day = days.get(selected);
+      if (day && day.items.length) {
+        for (const it of day.items) cItems.append(itemRow(it.text, String(it.hours)));
+      } else {
+        cItems.append(itemRow());
+      }
+      if (cTitle) cTitle.textContent = 'Log work · ' + fmtDay(parseDay(selected));
+      if (cDelete) cDelete.hidden = !day;
+      setCMsg('');
+    }
+
+    function openComposer() {
+      if (!selected) return;
+      populateComposer();
+      if (composer) composer.hidden = false;
+      composer?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      (cItems?.querySelector('.cal-item-text') as HTMLInputElement | null)?.focus();
+    }
+
+    cAdd?.addEventListener('click', () => {
+      if (cItems) { cItems.append(itemRow()); (cItems.lastElementChild?.querySelector('.cal-item-text') as HTMLInputElement | null)?.focus(); }
+    });
+
+    cCancel?.addEventListener('click', () => {
+      if (composer) composer.hidden = true;
+      setCMsg('');
+    });
+
+    cSave?.addEventListener('click', async () => {
+      if (!selected || !cItems) return;
+      const items: { text: string; hours: number }[] = [];
+      for (const row of Array.from(cItems.children)) {
+        const text = (row.querySelector('.cal-item-text') as HTMLInputElement | null)?.value.trim() || '';
+        if (!text) continue;
+        const hours = Number((row.querySelector('.cal-item-hours') as HTMLInputElement | null)?.value);
+        if (!Number.isFinite(hours) || hours <= 0 || hours > 24) {
+          setCMsg('Each item needs a description and hours in (0, 24].', 'err');
+          return;
+        }
+        items.push({ text, hours });
+      }
+      if (!items.length) { setCMsg('Add at least one item.', 'err'); return; }
+      if (cSave) cSave.disabled = true;
+      try {
+        const res = await fetch(`${API}/api/worklog/${selected}`, {
+          method: 'PUT',
+          credentials: 'include',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ items }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'failed');
+        setCMsg('Saved.', 'ok');
+        const sel = selected;
+        if (composer) composer.hidden = true;
+        await load();
+        selectDay(sel, true);
+      } catch (err: any) {
+        setCMsg('Error: ' + escapeHtml(err.message), 'err');
+      } finally {
+        if (cSave) cSave.disabled = false;
+      }
+    });
+
+    cDelete?.addEventListener('click', async () => {
+      if (!selected) return;
+      if (!confirm('Delete this day permanently?')) return;
+      try {
+        const res = await fetch(`${API}/api/worklog/${selected}`, { method: 'DELETE', credentials: 'include' });
+        if (!res.ok) { setCMsg('Delete failed.', 'err'); return; }
+        setCMsg('');
+        if (composer) composer.hidden = true;
+        const sel = selected;
+        await load();
+        days.delete(sel);
+        selected = null;
+        if (location.hash === '#' + sel) history.replaceState(null, '', location.pathname);
+        if (detail) { detail.hidden = true; detail.innerHTML = ''; }
+      } catch {
+        setCMsg('Delete failed.', 'err');
+      }
+    });
+
+    // Deep links: /calendar/#2026-09-21 selects that day. Deferred a frame so
+    // the grid has rendered after the async load.
+    function scrollToHash() {
+      if (!location.hash) return;
+      const date = location.hash.slice(1);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return;
+      requestAnimationFrame(() => selectDay(date, true));
+    }
+
+    window.addEventListener('hashchange', scrollToHash);
+
+    (async () => {
+      // A valid session cookie unlocks edit mode automatically; otherwise the
+      // page loads read-only and the unlock row waits behind the Edit button.
+      if (await checkAuth()) enterEditMode();
+      await load();
+      scrollToHash();
+    })();
+  </script>
+</Layout>

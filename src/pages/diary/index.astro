@@ -85,7 +85,7 @@ const API_BASE = 'https://diary.hihihi198.workers.dev';
 
     async function checkAuth(pw: string) {
       try {
-        const res = await fetch(`${API}/api/auth`, { headers: { 'x-admin-password': pw } });
+        const res = await fetch(`${API}/api/auth`, { credentials: 'include', headers: { 'x-admin-password': pw } });
         return res.ok;
       } catch {
         return false;
@@ -155,7 +155,7 @@ const API_BASE = 'https://diary.hihihi198.workers.dev';
       const method = editingId ? 'PUT' : 'POST';
       if (cSave) cSave.disabled = true;
       try {
-        const res = await fetch(url, { method, headers: authHeaders(), body: payload });
+        const res = await fetch(url, { method, credentials: 'include', headers: authHeaders(), body: payload });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'failed');
         setCMsg(editingId ? 'Updated.' : 'Posted.', 'ok');
@@ -194,6 +194,7 @@ const API_BASE = 'https://diary.hihihi198.workers.dev';
       try {
         const res = await fetch(`${API}/api/entries/${encodeURIComponent(id)}`, {
           method: 'DELETE',
+          credentials: 'include',
           headers: { 'x-admin-password': password },
         });
         if (!res.ok) { setCMsg('Delete failed.', 'err'); return; }
@@ -248,7 +249,7 @@ const API_BASE = 'https://diary.hihihi198.workers.dev';
     async function load() {
       if (!app) return;
       try {
-        const res = await fetch(`${API}/api/entries`);
+        const res = await fetch(`${API}/api/entries`, { credentials: 'include' });
         entries = await res.json();
         render();
       } catch {
@@ -350,6 +351,9 @@ const API_BASE = 'https://diary.hihihi198.workers.dev';
     window.addEventListener('hashchange', scrollToHash);
 
     if (cDate) cDate.value = todayStr();
+    // A valid session cookie unlocks edit mode automatically; the unlock row
+    // stays as the fallback when there is no cookie.
+    checkAuth('').then((ok) => { if (ok) enterEditMode(); });
     load();
   </script>
 </Layout>

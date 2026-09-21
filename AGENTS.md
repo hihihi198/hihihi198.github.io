@@ -5,16 +5,16 @@ Guide for agents working on this site. Read this before redesigning the frontend
 
 ## What this project is
 
-A personal site at **https://hihihi198.github.io** — a **static blog** plus a **dynamic diary**.
+A personal site at **https://hihihi198.github.io** — a **static blog** plus a **dynamic diary** and a **dynamic work-log calendar**.
 
-| | Blog (articles) | Diary |
-| --- | --- | --- |
-| Content lives in | Markdown files in git (`src/content/articles/`) | Cloudflare KV (**not** git) |
-| Rendered | At build time (SSG) | Client-side fetch from the Worker |
-| Publish by | Commit + push (Pages rebuilds) | Typing in the UI — instant, no rebuild |
-| Routes | `/`, `/articles/[slug]`, `/tags/`, `/tags/[tag]` | `/diary/` |
+| | Blog (articles) | Diary | Calendar (work log) |
+| --- | --- | --- | --- |
+| Content lives in | Markdown files in git (`src/content/articles/`) | Cloudflare KV (**not** git) | Cloudflare KV (**not** git), `work:` key prefix |
+| Rendered | At build time (SSG) | Client-side fetch from the Worker | Client-side fetch from the Worker |
+| Publish by | Commit + push (Pages rebuilds) | Typing in the UI — instant, no rebuild | Typing in the UI — instant, no rebuild |
+| Routes | `/`, `/articles/[slug]`, `/tags/`, `/tags/[tag]` | `/diary/` | `/calendar/` |
 
-This split is deliberate: the blog is slow-changing, long-form, git-versioned; the diary is fast and instant. They share **only the styling system**.
+This split is deliberate: the blog is slow-changing, long-form, git-versioned; the diary and calendar are fast and instant. They share **only the styling system**.
 
 **Repo:** `hihihi198/hihihi198.github.io` (public, GitHub user page). Deploys from `main` via `.github/workflows/deploy.yml` (Actions → Pages). Served at the domain root, so `astro.config.mjs` needs no `base`.
 
@@ -59,7 +59,8 @@ Rules to preserve:
 `.post-list .post-card .post-card__title .post-card__meta .post-card__summary .tag .tag-list .page-title` ·
 `.post__header .post__title .post__meta .post__back .post-body` ·
 `.timeline .month .month-label .entry .node .entry-head .linkbtn .entry-tools .loading .empty` ·
-`.diary-head .lede .edit-toggle .unlock-row .pw-input .unlock-msg .composer .composer-title .field .composer-actions .composer-msg`
+`.diary-head .lede .edit-toggle .unlock-row .pw-input .unlock-msg .composer .composer-title .field .composer-actions .composer-msg` ·
+`.cal-head .cal-heatmap .cal-months .cal-month .cal-month--pad .cal-grid .cal-weekdays .cal-weekday .cal-week .cal-day .cal-day--l1 .cal-day--l2 .cal-day--l3 .cal-day--l4 .cal-day--l5 .cal-day--empty .cal-today .cal-day--selected .cal-detail .cal-detail-hours .cal-detail-total .cal-detail-empty .cal-items .cal-item .cal-item-text .cal-item-hours .cal-item-remove`
 
 Keep these stable; renaming means editing markup too.
 
@@ -115,17 +116,22 @@ Live at `https://diary.hihihi198.workers.dev`. Source: `worker/src/index.ts` (si
 | Route | Auth | Purpose |
 | --- | --- | --- |
 | `GET /` | — | Standalone admin page (HTML inlined in the worker) |
-| `GET /api/auth` | admin password | Verify a password (used to unlock edit mode) |
+| `GET /api/auth` | session cookie **or** admin password | Verify a session; **sets `Set-Cookie: session=…` on password-header success** |
 | `GET /api/entries` | — | List entries, newest first (public; the feed) |
 | `POST /api/entries` | admin password **or** post token | Create |
 | `GET /api/entries/:id` | — | One entry, **including raw `body`** (for editing) |
-| `PUT /api/entries/:id` | admin password | Update |
-| `DELETE /api/entries/:id` | admin password | Delete |
+| `PUT /api/entries/:id` | session cookie **or** admin password | Update |
+| `DELETE /api/entries/:id` | session cookie **or** admin password | Delete |
+| `GET /api/worklog` | — | List work-log days, oldest first (public) |
+| `GET /api/worklog/:date` | — | One day (`work:YYYY-MM-DD`), incl. items + `totalHours` |
+| `PUT /api/worklog/:date` | session cookie **or** admin password | Create-or-replace a day's items |
+| `DELETE /api/worklog/:date` | session cookie **or** admin password | Delete a day |
 
-- Auth headers: `x-admin-password`, or `x-post-token` (**POST-only**, for external agents — see `docs/openclaw.md`).
+- Auth: a **stateless session cookie** (`session`, `HttpOnly; Secure; SameSite=None; Path=/; Max-Age=2592000`) **or** the `x-admin-password` header. The cookie value is `base64url(expiry) + '.' + base64url(HMAC-SHA256)` keyed by `SHA-256('session:' + ADMIN_PASSWORD)` — rotating the password invalidates all cookies; reissued only on explicit password unlock, not on passive checks. `x-post-token` remains **POST-only** for external agents (see `docs/openclaw.md`).
 - Secrets (Cloudflare, never in git): `ADMIN_PASSWORD`, `POST_TOKEN`.
-- **CORS is locked to `https://hihihi198.github.io`** and allows `GET/POST/PUT/DELETE/OPTIONS` plus those headers. **Adding a route or header means updating the CORS block**, or the browser calls fail.
+- **CORS is locked to `https://hihihi198.github.io`** with `Access-Control-Allow-Credentials: true` (session cookies ride cross-site fetches) and allows `GET/POST/PUT/DELETE/OPTIONS` plus those headers. **Adding a route or header means updating the CORS block**, or the browser calls fail.
 - Entry shape in KV (`entry:<id>`): `{ id, date, body, bodyHtml, tags, lang, createdAt, updatedAt }`. `lang` is `en | ja` and drives the `:lang()` font stack on the rendered entry (see "Language & fonts"); `publicView`/`fullView` normalize legacy values on read, so the API never emits the retired `zh` or a missing `lang`. `id` is `YYYY-MM-DD`, with `-2`, `-3`… appended for same-day collisions.
+- Work-log day shape in KV (`work:YYYY-MM-DD`): `{ date, items: [{ id, text, hours }], createdAt, updatedAt }` (epoch ms). One document per calendar day; the date string is client-supplied and never timezone-shifted. `PUT` replaces the whole item array; `totalHours` is computed on read.
 
 Deploy the worker (site deploy does **not** cover it):
 
@@ -142,10 +148,19 @@ CLOUDFLARE_API_TOKEN="$(cat ~/.cloudflare-api-token)" \
 Static shell + a `<script>` that does everything client-side:
 
 - Fetches `GET /api/entries`, groups entries by month, builds the timeline DOM (classes above), newest first.
-- **Edit mode:** the page always loads **read-only**. "Edit" reveals a password prompt → `GET /api/auth` → on success shows the composer and inline Edit/Delete per entry. The password is held **in memory only** — deliberately not cached, so the composer never appears on load. Don't reintroduce persistence.
+- **Edit mode:** the page loads read-only unless a valid session cookie is present (then edit mode opens automatically). Otherwise "Edit" reveals a password prompt → `GET /api/auth` with the password → success plants the session cookie (30 days) and shows the composer and inline Edit/Delete per entry. The unlock row remains the fallback when cookies are blocked.
 - **Deep links:** `/diary/#<id>` scrolls to and flashes an entry. The scroll is deferred a frame because entries render *after* load (native hash-scroll fires too early). Each entry has a `#` button that jumps + copies the permalink — entry bodies are **not** click-to-jump links (the user asked for explicit buttons).
 
 If you rewrite this page, preserve those behaviors and keep the API/auth logic intact.
+
+## The calendar page (`src/pages/calendar/index.astro`)
+
+Static shell + a `<script>`, same client-side architecture as the diary page:
+
+- Fetches `GET /api/worklog`, renders a GitHub-contributions-style grid (week columns, Sunday-first; month labels on top, weekday labels on the left). Cell intensity = `totalHours` for that day, banded `(0,1] (1,2] (2,4] (4,8] >8` into `.cal-day--l1…--l5`; tints are `color-mix` on `--color-accent` (both themes adapt automatically).
+- Range: earliest logged day (at least ~6 months back) → today; the grid scrolls horizontally and starts scrolled to today. **"Today" is the UTC+8 calendar day** (`Date.now() + 8h`), unlike the diary worker's UTC-day default — the work log is the author's own, keyed to their timezone.
+- Clicking a day selects it (hash deep link `/calendar/#YYYY-MM-DD`), scrolls it into view, and shows a read-only detail panel. In edit mode the panel gets an Edit button → composer: rows of `{text, hours}`, PUT replaces the whole day, Delete day removes it.
+- Empty days are inert (`disabled`) for visitors; in edit mode they're clickable. Auth/edit-mode flow is identical to the diary page (session cookie, unlock-row fallback).
 
 ## Workflow
 
@@ -168,7 +183,8 @@ When starting the dev server, prefer background mode: `astro dev --background`, 
 - `.claude/` is gitignored. Never commit secrets; tokens live in `~/.cloudflare-api-token`, `~/.diary-post-token` (chmod 600).
 - Old commits contain a harmless `.claude/settings.local.json`; the user **declined** scrubbing git history. Don't re-propose it.
 - Astro's `is:global` blocks don't support `:global()` — use plain selectors there (lightningcss warns and drops the rule).
-- Dates are **calendar days, not instants** — formatted with `timeZone: 'UTC'` so they never shift. The project default timezone is **UTC+8**: set article `date` to the UTC+8 calendar day. The diary Worker still defaults entry dates to the UTC day (change there means a worker edit + redeploy).
+- Dates are **calendar days, not instants** — formatted with `timeZone: 'UTC'` so they never shift. The project default timezone is **UTC+8**: set article `date` to the UTC+8 calendar day. The diary Worker still defaults entry dates to the UTC day (change there means a worker edit + redeploy); the calendar page computes "today" in UTC+8 but always sends explicit dates.
+- Site→Worker fetches must use `credentials: 'include'` (session cookie) and only work from the deployed origin — `localhost` dev can't reach the API (CORS origin is fixed), so diary/calendar editing is untestable via `astro dev`; verify against the deployed worker. The session cookie is **third-party** (`workers.dev` from `github.io`): Safari ITP / Chrome cookie phase-out may block it — the password-header unlock row is the deliberate fallback, so don't remove it.
 - Fonts are self-hosted in `public/fonts/` (Newsreader variable serif, IBM Plex Mono, Noto Serif CJK JP — all OFL) and declared in `fonts.css`; `Layout.astro` preloads the text serif only. Keep the Georgia/Menlo fallback stacks in `tokens.css` intact, and read "Language & fonts" before touching `--font-body`.
 - `base.css` has `[hidden] { display: none !important }` — the diary toggles sections with the `hidden` attribute, and author `display` rules would otherwise beat the UA rule and show them on load.
 - **Keep `katex` pinned to `^0.16`.** rehype-katex renders with 0.16's class names (`sizing reset-sizeN`), but KaTeX 0.18 renamed them (`katex-sizing`/`fontsize-ensurer`). If the imported CSS is newer than the renderer, superscripts/subscripts render full-size. Only upgrade together with rehype-katex.

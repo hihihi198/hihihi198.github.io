@@ -17,12 +17,29 @@ interface Entry {
   updatedAt?: string; // ISO
 }
 
+interface WorkItem {
+  id: string;
+  text: string;
+  hours: number;
+}
+
+// One document per calendar day; the date string is client-supplied and never
+// timezone-shifted (see AGENTS.md — the calendar computes "today" in UTC+8).
+interface WorkDay {
+  date: string; // 'YYYY-MM-DD'
+  items: WorkItem[];
+  createdAt: number; // epoch ms
+  updatedAt: number;
+}
+
 const SITE_ORIGIN = 'https://hihihi198.github.io';
 
 const corsHeaders: Record<string, string> = {
   'Access-Control-Allow-Origin': SITE_ORIGIN,
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
   'Access-Control-Allow-Headers': 'content-type, x-admin-password',
+  // Cookie auth: the origin above is specific (not '*'), which credentials mode requires.
+  'Access-Control-Allow-Credentials': 'true',
   Vary: 'Origin',
 };
 
@@ -43,8 +60,64 @@ async function verify(a: string, b: string): Promise<boolean> {
   return diff === 0;
 }
 
+// --- Session cookies -------------------------------------------------------
+// Stateless sessions: token = base64url(expiryEpoch) + '.' + base64url(HMAC-SHA256
+// of that). Key is derived from ADMIN_PASSWORD, so rotating the password
+// invalidates every outstanding cookie. Nothing is stored in KV.
+
+const SESSION_TTL_SEC = 60 * 60 * 24 * 30; // 30 days
+
+function b64url(bytes: Uint8Array): string {
+  let s = '';
+  for (const b of bytes) s += String.fromCharCode(b);
+  return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+function b64urlToBytes(s: string): Uint8Array | null {
+  try {
+    const b64 = s.replace(/-/g, '+').replace(/_/g, '/');
+    const bin = atob(b64 + '='.repeat((4 - (b64.length % 4)) % 4));
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return bytes;
+  } catch {
+    return null;
+  }
+}
+
+async function sessionKey(env: Env): Promise<CryptoKey> {
+  const enc = new TextEncoder();
+  const raw = await crypto.subtle.digest('SHA-256', enc.encode('session:' + env.ADMIN_PASSWORD));
+  return crypto.subtle.importKey('raw', raw, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign', 'verify']);
+}
+
+async function signSession(env: Env, expirySec: number): Promise<string> {
+  const key = await sessionKey(env);
+  const payloadBytes = new TextEncoder().encode(String(expirySec));
+  const sig = new Uint8Array(await crypto.subtle.sign('HMAC', key, payloadBytes));
+  return b64url(payloadBytes) + '.' + b64url(sig);
+}
+
+async function validSession(request: Request, env: Env): Promise<boolean> {
+  const cookie = request.headers.get('cookie') || '';
+  const m = /(?:^|;\s*)session=([^;]+)/.exec(cookie);
+  if (!m) return false;
+  const token = decodeURIComponent(m[1]);
+  const dot = token.lastIndexOf('.');
+  if (dot <= 0) return false;
+  const payloadBytes = b64urlToBytes(token.slice(0, dot));
+  const sigBytes = b64urlToBytes(token.slice(dot + 1));
+  if (!payloadBytes || !sigBytes) return false;
+  const exp = Number(new TextDecoder().decode(payloadBytes));
+  if (!Number.isFinite(exp) || exp <= Math.floor(Date.now() / 1000)) return false;
+  const key = await sessionKey(env);
+  // crypto.subtle.verify is constant-time.
+  return crypto.subtle.verify('HMAC', key, sigBytes, payloadBytes);
+}
+
 async function authorized(request: Request, env: Env): Promise<boolean> {
   if (!env.ADMIN_PASSWORD) return false;
+  if (await validSession(request, env)) return true;
   return verify(request.headers.get('x-admin-password') ?? '', env.ADMIN_PASSWORD);
 }
 
@@ -74,6 +147,32 @@ function parseEntryInput(payload: any): Parsed {
     : [];
   const lang = LANGS.includes(payload?.lang) ? payload.lang : 'en';
   return { ok: true, text, date, tags, lang };
+}
+
+type ParsedWorkDay = { ok: true; items: WorkItem[] } | { ok: false; error: string };
+
+function parseWorkDayInput(payload: any): ParsedWorkDay {
+  if (!payload || !Array.isArray(payload.items)) return { ok: false, error: 'items must be an array' };
+  if (payload.items.length > 100) return { ok: false, error: 'too many items' };
+  const items: WorkItem[] = [];
+  for (const raw of payload.items) {
+    const text = String(raw?.text ?? '').trim();
+    if (!text) return { ok: false, error: 'item text is required' };
+    if (text.length > 500) return { ok: false, error: 'item text too long' };
+    const hours = Number(raw?.hours);
+    if (!Number.isFinite(hours) || hours <= 0 || hours > 24)
+      return { ok: false, error: 'hours must be a number in (0, 24]' };
+    items.push({ id: String(raw?.id ?? items.length + 1), text, hours });
+  }
+  return { ok: true, items };
+}
+
+function workDayView(d: WorkDay) {
+  return {
+    date: d.date,
+    items: d.items,
+    totalHours: d.items.reduce((s, i) => s + i.hours, 0),
+  };
 }
 
 // Date-based id; append -2, -3, … on collision so multiple same-day posts work.
@@ -332,9 +431,22 @@ export default {
       return new Response(ADMIN_HTML, { headers: { 'content-type': 'text/html; charset=utf-8' } });
     }
 
-    // Password check — used by the diary page to verify before revealing edit mode.
+    // Password/session check — used by the diary and calendar pages to verify
+    // before revealing edit mode. Authenticating with the password header also
+    // issues a session cookie; cookie-only requests just validate the session.
     if (parts[0] === 'api' && parts[1] === 'auth' && parts.length === 2 && method === 'GET') {
-      return (await authorized(request, env)) ? json({ ok: true }) : json({ error: 'unauthorized' }, 401);
+      if (!(await authorized(request, env))) return json({ error: 'unauthorized' }, 401);
+      const res = json({ ok: true });
+      if (request.headers.get('x-admin-password')) {
+        const exp = Math.floor(Date.now() / 1000) + SESSION_TTL_SEC;
+        const token = await signSession(env, exp);
+        // SameSite=None because the site calls this worker cross-site.
+        res.headers.append(
+          'Set-Cookie',
+          `session=${encodeURIComponent(token)}; HttpOnly; Secure; SameSite=None; Path=/; Max-Age=${SESSION_TTL_SEC}`
+        );
+      }
+      return res;
     }
 
     if (parts[0] === 'api' && parts[1] === 'entries') {
@@ -407,6 +519,74 @@ export default {
           };
           await env.DIARY.put(key, JSON.stringify(updated));
           return json(publicView(updated));
+        }
+        if (method === 'DELETE') {
+          if (!(await authorized(request, env))) return json({ error: 'unauthorized' }, 401);
+          await env.DIARY.delete(key);
+          return json({ ok: true });
+        }
+      }
+    }
+
+    // Work log (calendar). One KV document per day under the work: prefix,
+    // sharing the DIARY namespace.
+    if (parts[0] === 'api' && parts[1] === 'worklog') {
+      // GET /api/worklog — all days (public)
+      if (parts.length === 2 && method === 'GET') {
+        const days: unknown[] = [];
+        let cursor: string | undefined;
+        do {
+          const page = await env.DIARY.list({ prefix: 'work:', cursor });
+          for (const k of page.keys) {
+            const raw = await env.DIARY.get(k.name);
+            if (!raw) continue;
+            try {
+              days.push(workDayView(JSON.parse(raw) as WorkDay));
+            } catch {
+              // skip malformed
+            }
+          }
+          cursor = page.list_complete ? undefined : page.cursor;
+        } while (cursor);
+        days.sort((a: any, b: any) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+        return json(days);
+      }
+
+      // Single day: /api/worklog/:date
+      if (parts.length === 3 && /^\d{4}-\d{2}-\d{2}$/.test(parts[2])) {
+        const key = 'work:' + parts[2];
+        if (method === 'GET') {
+          const raw = await env.DIARY.get(key);
+          if (!raw) return json({ error: 'not found' }, 404);
+          try {
+            return json(workDayView(JSON.parse(raw) as WorkDay));
+          } catch {
+            return json({ error: 'not found' }, 404);
+          }
+        }
+        if (method === 'PUT') {
+          if (!(await authorized(request, env))) return json({ error: 'unauthorized' }, 401);
+          let payload: any;
+          try {
+            payload = await request.json();
+          } catch {
+            return json({ error: 'invalid json' }, 400);
+          }
+          const parsed = parseWorkDayInput(payload);
+          if (!parsed.ok) return json({ error: parsed.error }, 400);
+          const now = Date.now();
+          let createdAt = now;
+          const existing = await env.DIARY.get(key);
+          if (existing) {
+            try {
+              createdAt = (JSON.parse(existing) as WorkDay).createdAt;
+            } catch {
+              // malformed — treat as new
+            }
+          }
+          const day: WorkDay = { date: parts[2], items: parsed.items, createdAt, updatedAt: now };
+          await env.DIARY.put(key, JSON.stringify(day));
+          return json(workDayView(day));
         }
         if (method === 'DELETE') {
           if (!(await authorized(request, env))) return json({ error: 'unauthorized' }, 401);
