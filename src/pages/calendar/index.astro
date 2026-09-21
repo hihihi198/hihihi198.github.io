@@ -402,9 +402,8 @@ const API_BASE = 'https://diary.hihihi198.workers.dev';
     window.addEventListener('hashchange', scrollToHash);
 
     (async () => {
-      // A valid session cookie unlocks edit mode automatically; otherwise the
-      // page loads read-only and the unlock row waits behind the Edit button.
-      if (await checkAuth()) enterEditMode();
+      // Always load read-only; clicking Edit probes the session silently and
+      // only asks for a password when no valid session exists.
       await load();
       scrollToHash();
     })();

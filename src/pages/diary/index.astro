@@ -377,9 +377,8 @@ const API_BASE = 'https://diary.hihihi198.workers.dev';
     window.addEventListener('hashchange', scrollToHash);
 
     if (cDate) cDate.value = todayStr();
-    // A valid session cookie unlocks edit mode automatically; the unlock row
-    // stays as the fallback when there is no cookie.
-    checkAuth('').then((ok) => { if (ok) enterEditMode(); });
+    // Always load read-only; clicking Edit probes the session silently and
+    // only asks for a password when no valid session exists.
     load();
   </script>
 </Layout>
