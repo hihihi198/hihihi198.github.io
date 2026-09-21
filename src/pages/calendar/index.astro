@@ -32,7 +32,7 @@ const API_BASE = 'https://diary.hihihi198.workers.dev';
   </div>
 
   <p class="cal-diligence"
-     title="Each of the last 30 days (today excluded) scores (hours − 4)², weighted linearly by recency — yesterday counts 1×, 30 days ago 1/30. Days of 4h or less score 0.">
+     title="Each of the last 30 days (today excluded) scores (hours − 2)², weighted linearly by recency — yesterday counts 1×, 30 days ago 1/30. Days of 2h or less score 0.">
     Diligence index · last 30 days: <strong id="dil-value">—</strong>
   </p>
 
@@ -97,7 +97,7 @@ const API_BASE = 'https://diary.hihihi198.workers.dev';
     }
 
     // Diligence index: over the 30 days before today (today excluded), each
-    // day scores (hours − 4)² — days of 4h or less score 0 — weighted linearly
+    // day scores (hours − 2)² — days of 2h or less score 0 — weighted linearly
     // by recency: w(age) = (31 − age)/30, so yesterday counts 1× and 30 days
     // ago counts 1/30.
     function diligenceIndex(): number {
@@ -108,7 +108,7 @@ const API_BASE = 'https://diary.hihihi198.workers.dev';
         d.setUTCDate(d.getUTCDate() - age);
         const day = days.get(d.toISOString().slice(0, 10));
         if (!day) continue;
-        const excess = Math.max(day.totalHours - 4, 0);
+        const excess = Math.max(day.totalHours - 2, 0);
         score += ((31 - age) / 30) * excess * excess;
       }
       return score;
@@ -116,7 +116,7 @@ const API_BASE = 'https://diary.hihihi198.workers.dev';
 
     function updateDiligence() {
       const el = document.getElementById('dil-value');
-      if (el) el.textContent = diligenceIndex().toFixed(1);
+      if (el) el.textContent = String(Math.round(diligenceIndex()));
     }
 
     // Session token: kept in localStorage (first-party — survives the

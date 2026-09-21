@@ -36,7 +36,9 @@ $$
 \pi^*=\arg\max_{\pi}\mathbb E_{\pi}(G_t)
 $$
 
-## Value Functions: Turning "Expected Return" into Computable Quantities
+## Value Functions
+
+Turning "expected return" into computable quantities.
 
 Define the **state-value** function and **action-value** function:
 $$
@@ -53,7 +55,7 @@ V^{\pi}(s)=\sum_a\pi(a|s)\sum_{s'}P(s'|s,a)[R(s,a,s')+\gamma V^{\pi}(s')]
 $$
 This is the **Bellman expectation equation**.
 
-## Bellman Optimality and Why It Matters
+## Bellman Optimality
 
 Replacing "average over $\pi$" with "max over actions" gives the Bellman optimally equation:
 $$
@@ -64,3 +66,22 @@ $$
 Q^*(s,a)=\sum_{s'}P(s'|s,a)[R(s,a,s')+\gamma\max_{a'}Q^*(s',a')]
 $$
 
+As long as we solve $V^*$ or $Q^*$, we will get the optimal policy. 
+
+Bellman optimality operator $T^*$:
+$$
+(T^*V)(s)=\max_a\sum_{s'}P(s'|s,a)[R(s, a, s')+\gamma V(s')]
+$$
+Obviously, if $V$ is not optimal, $T^*V$ is not necessary optimal because it still evaluate the value of $s'$ with $V$. **However, its fixed point is the true optimal value function:**
+$$
+V^*=T^*V^*
+$$
+The crucial theorem is that for a discounted finite MDP, $T^*$ is a contraction:
+$$
+\big|(T^* V)(s) - (T^* U)(s)\big| \le \gamma \max_{s'} |V(s') - U(s')| = \gamma \|V - U\|_\infty
+$$
+Since $\gamma < 1$, it has exactly one fixed point, and repeated application of $T$ converges to it geometrically. That's why value iteration (VI) works.
+
+## Learning with Unknown $P$ and $R$
+
+With unknown $P$, you must learn from experience, or learn a model.
