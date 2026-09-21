@@ -701,6 +701,19 @@
   outline: 2px solid var(--color-accent);
 }
 
+.cal-legend {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 0.75rem;
+  font-size: 0.72rem;
+  color: var(--color-muted);
+}
+.cal-legend .cal-day {
+  display: block;
+  cursor: default;
+}
+
 .cal-detail {
   margin-top: 1.5rem;
   padding: 1rem 1.25rem;

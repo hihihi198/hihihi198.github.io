@@ -6,7 +6,7 @@ const API_BASE = 'https://diary.hihihi198.workers.dev';
 ---
 <Layout title="Calendar · hihihi198">
   <div class="cal-head">
-    <p class="lede">Daily work log — the longer the day, the darker the cell.</p>
+    <p class="lede">Daily work log — cell intensity shows hours worked.</p>
     <button id="edit-toggle" class="edit-toggle" type="button">Edit</button>
   </div>
 
@@ -20,6 +20,17 @@ const API_BASE = 'https://diary.hihihi198.workers.dev';
     <p class="loading">Loading…</p>
   </div>
 
+  <div class="cal-legend" aria-hidden="true">
+    <span>Less</span>
+    <i class="cal-day cal-day--empty"></i>
+    <i class="cal-day cal-day--l1"></i>
+    <i class="cal-day cal-day--l2"></i>
+    <i class="cal-day cal-day--l3"></i>
+    <i class="cal-day cal-day--l4"></i>
+    <i class="cal-day cal-day--l5"></i>
+    <span>More</span>
+  </div>
+
   <section id="cal-detail" class="cal-detail" hidden></section>
 
   <section id="composer" class="composer" hidden>
@@ -29,7 +40,7 @@ const API_BASE = 'https://diary.hihihi198.workers.dev';
       <button id="c-add" type="button">Add item</button>
       <button id="c-save" type="button" class="primary">Save</button>
       <button id="c-cancel" type="button">Cancel</button>
-      <button id="c-delete" type="button" class="danger">Delete day</button>
+      <button id="c-delete" type="button" class="danger">Clear today</button>
     </div>
     <p id="c-msg" class="composer-msg"></p>
   </section>
@@ -110,8 +121,11 @@ const API_BASE = 'https://diary.hihihi198.workers.dev';
       if (editToggle) { editToggle.textContent = 'Done'; editToggle.classList.add('active'); }
       if (unlockRow) unlockRow.hidden = true;
       if (pwInput) pwInput.value = '';
+      // The log is for today — edit mode opens today's composer directly,
+      // no cell-selection step.
+      populateComposer();
+      if (composer) composer.hidden = false;
       render();
-      if (selected) renderDetail();
     }
 
     function exitEditMode() {
@@ -220,7 +234,7 @@ const API_BASE = 'https://diary.hihihi198.workers.dev';
           else cell.classList.add('cal-day--empty');
           if (key === today) cell.classList.add('cal-today');
           if (key === selected) cell.classList.add('cal-day--selected');
-          if (!day && !unlocked) cell.disabled = true;
+          if (!day) cell.disabled = true; // cells are read-only history; only today is editable
           const total = day ? day.totalHours : 0;
           cell.setAttribute('aria-label', day ? `${fmtDay(d)}: ${total}h` : `${fmtDay(d)}: no work logged`);
           col.append(cell);
@@ -250,10 +264,8 @@ const API_BASE = 'https://diary.hihihi198.workers.dev';
       } else {
         html += '<p class="cal-detail-empty">Nothing logged for this day.</p>';
       }
-      if (unlocked) html += '<button type="button" class="editbtn" id="detail-edit">Edit</button>';
       detail.innerHTML = html;
       detail.hidden = false;
-      document.getElementById('detail-edit')?.addEventListener('click', openComposer);
     }
 
     function selectDay(date: string, fromHash = false) {
@@ -265,7 +277,6 @@ const API_BASE = 'https://diary.hihihi198.workers.dev';
         cell.scrollIntoView({ block: 'nearest', inline: 'center' });
       }
       renderDetail();
-      if (composer && !composer.hidden) populateComposer();
       if (!fromHash) {
         if (location.hash !== '#' + date) location.hash = date;
         else renderDetail();
@@ -299,25 +310,18 @@ const API_BASE = 'https://diary.hihihi198.workers.dev';
     }
 
     function populateComposer() {
-      if (!cItems || !selected) return;
+      if (!cItems) return;
+      const date = todayStr();
       cItems.innerHTML = '';
-      const day = days.get(selected);
+      const day = days.get(date);
       if (day && day.items.length) {
         for (const it of day.items) cItems.append(itemRow(it.text, String(it.hours)));
       } else {
         cItems.append(itemRow());
       }
-      if (cTitle) cTitle.textContent = 'Log work · ' + fmtDay(parseDay(selected));
-      if (cDelete) cDelete.hidden = !day;
+      if (cTitle) cTitle.textContent = 'Log work · ' + fmtDay(parseDay(date));
+      if (cDelete) cDelete.hidden = !(day && day.items.length);
       setCMsg('');
-    }
-
-    function openComposer() {
-      if (!selected) return;
-      populateComposer();
-      if (composer) composer.hidden = false;
-      composer?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      (cItems?.querySelector('.cal-item-text') as HTMLInputElement | null)?.focus();
     }
 
     cAdd?.addEventListener('click', () => {
@@ -330,7 +334,8 @@ const API_BASE = 'https://diary.hihihi198.workers.dev';
     });
 
     cSave?.addEventListener('click', async () => {
-      if (!selected || !cItems) return;
+      if (!cItems) return;
+      const date = todayStr();
       const items: { text: string; hours: number }[] = [];
       for (const row of Array.from(cItems.children)) {
         const text = (row.querySelector('.cal-item-text') as HTMLInputElement | null)?.value.trim() || '';
@@ -346,7 +351,7 @@ const API_BASE = 'https://diary.hihihi198.workers.dev';
       if (cSave) cSave.disabled = true;
       try {
         const t = storedToken();
-        const res = await fetch(`${API}/api/worklog/${selected}`, {
+        const res = await fetch(`${API}/api/worklog/${date}`, {
           method: 'PUT',
           credentials: 'include',
           headers: { 'content-type': 'application/json', ...(t ? { 'x-session-token': t } : {}) },
@@ -354,11 +359,9 @@ const API_BASE = 'https://diary.hihihi198.workers.dev';
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'failed');
-        setCMsg('Saved.', 'ok');
-        const sel = selected;
-        if (composer) composer.hidden = true;
         await load();
-        selectDay(sel, true);
+        populateComposer();
+        setCMsg('Saved.', 'ok');
       } catch (err: any) {
         setCMsg('Error: ' + escapeHtml(err.message), 'err');
       } finally {
@@ -367,24 +370,18 @@ const API_BASE = 'https://diary.hihihi198.workers.dev';
     });
 
     cDelete?.addEventListener('click', async () => {
-      if (!selected) return;
-      if (!confirm('Delete this day permanently?')) return;
+      const date = todayStr();
+      if (!confirm('Clear today’s log permanently?')) return;
       try {
         const t = storedToken();
-        const res = await fetch(`${API}/api/worklog/${selected}`, {
+        const res = await fetch(`${API}/api/worklog/${date}`, {
           method: 'DELETE',
           credentials: 'include',
           headers: t ? { 'x-session-token': t } : {},
         });
         if (!res.ok) { setCMsg('Delete failed.', 'err'); return; }
-        setCMsg('');
-        if (composer) composer.hidden = true;
-        const sel = selected;
         await load();
-        days.delete(sel);
-        selected = null;
-        if (location.hash === '#' + sel) history.replaceState(null, '', location.pathname);
-        if (detail) { detail.hidden = true; detail.innerHTML = ''; }
+        populateComposer();
       } catch {
         setCMsg('Delete failed.', 'err');
       }
